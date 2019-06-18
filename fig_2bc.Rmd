@@ -21,7 +21,7 @@ library(here)
 library(ggpubr)
 library(here)
 
-parent_folder <- here::here('fig_2b')
+parent_folder <- here::here('fig_2bc')
 ```
 
 ```{r mergebins_liblist}
