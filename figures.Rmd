@@ -20,7 +20,7 @@ library(gridExtra)
 library(here)
 library(ggpubr)
 
-parent_folder <- "/Users/Max_Schubert/Dropbox/RLR_e.coli_dropbox/rlr_git"
+parent_folder <- here::here()
 ```
 
 
@@ -68,6 +68,7 @@ melt_with_fedit <- melt_with_metadata2[ is_ref ==TRUE | is_alt == TRUE , fractio
 
 ```
 
+## Fig 1C
 
 ```{r fig1c_plot}
 #to make Xlabels have multiple lines, instead of comma and space:
@@ -110,11 +111,6 @@ ggplot(b22, aes(x=strain_genotype, y=fraction_edited, color=adapters)) +
   stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif") +
   scale_x_discrete(labels = x_labels)
 
-```
-
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
