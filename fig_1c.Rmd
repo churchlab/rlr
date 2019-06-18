@@ -24,6 +24,7 @@ parent_folder <- here::here()
 ```
 
 
+# Load & Munge Raw Data
 ```{r fig1_load_data_and_metadata}
 #from b22 analysis
 fig1c_dir = "fig_1c"
@@ -98,15 +99,16 @@ x_labels <- addline_format(c("WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆r
 
 ggplot(b22, aes(x=strain_genotype, y=fraction_edited, color=adapters)) + 
   geom_jitter(width = 0.1, height = 0.1, size = 3) +
-  theme_bw() +
+  theme_minimal() +
   #scale_x_discrete(labels = addline_format(c("Background, control", "WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))) +#limit=c(0.0005, 8),) +
-  scale_y_continuous(breaks = c(.00001, .0001, .001, .01, .1, .25), 
+  scale_y_continuous(breaks = c(.00001, .0001, .001, .01, .1, .25),
+                     breaks = c(.00001, .0001, .001, .01, .1, .25), 
                      trans = log10_trans()) +
   theme(text = element_text(size=18)) +
   labs(
     x = "Genotype",
     y = "Fraction Edited",
-    title = "Effect of genotype on editing efficiency, sequencing results",
+    title = "",
     color = "Locus") + # Add pairwise comparisons p-value
   stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif") +
   scale_x_discrete(labels = x_labels)
