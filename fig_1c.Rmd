@@ -23,8 +23,6 @@ library(ggpubr)
 parent_folder <- here::here()
 ```
 
-
-# Load & Munge Raw Data
 ```{r fig1_load_data_and_metadata}
 #from b22 analysis
 fig1c_dir = "fig_1c"
@@ -71,7 +69,7 @@ melt_with_fedit <- melt_with_metadata2[ is_ref ==TRUE | is_alt == TRUE , fractio
 
 ## Fig 1C
 
-```{r fig1c_plot}
+```{r fig1c_plot, fig.height=3, fig.width=4, dpi=200}
 #to make Xlabels have multiple lines, instead of comma and space:
 addline_format <- function(x,...){
   gsub(', ','\n',x)
@@ -94,17 +92,22 @@ b22$strain_genotype <- factor(b22$strain_genotype, levels = c("WT","∆mutS",
                                                               "∆mutS, ∆recJ, ∆sbcB"))
 my_comparisons <- list( c("WT", "∆mutS"), c("∆mutS", "∆mutS, ∆sbcB"),
                         c("∆mutS, ∆sbcB","∆mutS, ∆recJ"), c("∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB") )
+
 x_labels <- addline_format(c("WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))
 
+scientific_10 <- function(x) {
+  parse(text=gsub("e", " %*% 10^", scales::scientific_format()(x)))
+}
+
+y_breaks <- c(.00001, .0001, .001, .01, .1, .25)
 
 ggplot(b22, aes(x=strain_genotype, y=fraction_edited, color=adapters)) + 
-  geom_jitter(width = 0.1, height = 0.1, size = 3) +
-  theme_minimal() +
-  #scale_x_discrete(labels = addline_format(c("Background, control", "WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))) +#limit=c(0.0005, 8),) +
+  geom_jitter(width = 0.1, height = 0.1, size = 1) +
+  theme_classic() +
   scale_y_continuous(breaks = c(.00001, .0001, .001, .01, .1, .25),
-                     breaks = c(.00001, .0001, .001, .01, .1, .25), 
+                     label=c(scientific_10(y_breaks[1:3]), y_breaks[4:6]), 
                      trans = log10_trans()) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=10)) +
   labs(
     x = "Genotype",
     y = "Fraction Edited",
