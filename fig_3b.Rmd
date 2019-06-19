@@ -78,114 +78,81 @@ seq_annotated_megatable <- megatable_ratios
 
 ####normalize values to expression at t= 1
 #first, fix the issue with A, A5, etc by making two tables
-a5mega <- seq_annotated_megatable[timepoint %in% c(0, 1) & ratio_expt == 'A'][, ratio_expt := 'A_5'][sample_type == 'plasmid' & replicate != 'D']
+a5mega <- seq_annotated_megatable[ratio_expt == 'A'][, ratio_expt := 'A_5'][sample_type != 'msDNA' & replicate != 'D']
 a100mega <- seq_annotated_megatable[timepoint %in% c(0, 1) & ratio_expt == 'A'][, ratio_expt := 'A_100'][sample_type == 'plasmid' & replicate != 'D']
 restofitA5 <-  seq_annotated_megatable[timepoint %in% c(2, 3) & ratio_expt == 'A_5']
 restofitA100 <-  seq_annotated_megatable[timepoint %in% c(2, 3) & ratio_expt == 'A_100']
 megatable5 <- rbind(a5mega, restofitA5)
 megatable100 <- rbind(a100mega, restofitA100)
 
-#next, establish "enrichment" as it's abundance, relative to t=1
+#####
+
+megatable5[, read.pct := Count/sum(Count), by=c('timepoint','replicate')]
+
 megatable5[,
-           t1.enrichment := ratio_to_neutrals / ratio_to_neutrals[timepoint==1],
-           by=c("nickname", "mut_class", "replicate")]
-megatable100[,
-             t1.enrichment := ratio_to_neutrals / ratio_to_neutrals[timepoint==1],
-             by=c("nickname", "mut_class", "replicate")]
+           plas.enrichment := ratio_to_neutrals / ratio_to_neutrals[timepoint==-1],
+           by=c("nickname", "mut_class")]
 
-#next, try out a summary stat, timepoint 3/2
-#megatable5[,
-#           three.over.two := t1.enrichment[timepoint==3] / #t1.enrichment[timepoint==2],
-#           by=c("nickname", "mut_class", "replicate")]
-
-#now burn ratio_expt, and other columns that aren't relevant
-megatable5[, c("unique_id",
-               "Name",
-               "Sample",
-               "ratio_expt",
-               "exprs_expt",
-               "V17",
-               "V18",
-               "read_id",
-               "total_count",
-               "bc_read",
-               "i.Sample",
-               "options",
-               "mutation",
-               "barcodes"):=NULL]
-
-megatable100[, c("unique_id",
-                 "Name",
-                 "Sample",
-                 "ratio_expt",
-                 "exprs_expt",
-                 "read_id",
-                 "total_count",
-                 "bc_read",
-                 "i.Sample",
-                 "options",
-                 "mutation",
-                 "barcodes"):=NULL]
-
+# 1. in previous figure, drug resistance goes up
+# 2. here, we use smaller growth differences (less drug), we clearly observe effects of smaller changes
+# 3. quantitative results make sense
 ```
 
-```{r plot_rif_100}
-currenttable = megatable100 #set experiment to view
+```{r fig3b, fig.height=5, fig.width=4, dpi=300}
+summary <- megatable5[, 
+  list(
+    read.pct = mean(read.pct),
+    N= .N,
+    plas.enrichment= mean(plas.enrichment),
+    sd= sd(plas.enrichment),
+    se= sd(plas.enrichment) / sqrt(.N)),
+  by=c( "timepoint", "sample_type", "induction", "prodonor_seq", "nickname", "mut_class")]
 
-#define means
-summary <- currenttable[,
-                        list(
-                          Count = Count,
-                          N= .N,
-                          meanRatio= mean(t1.enrichment),
-                          sd= sd(t1.enrichment),
-                          se= sd(t1.enrichment) / sqrt(.N)),
-                        by=c("nickname", "mut_class", "timepoint")]
+summary <- summary[sample_type != "msDNA" & mut_class %in% c('Lethal','Neutral','Drug_resistance')]
 
+categories_to_plot <- c('Lethal','Neutral','Drug_resistance')
+condition_labels <- c(
+  'Plasmid\nLibrary',
+  'No\nInduction',
+  'Induction\n-Rif',
+  '20 doublings\n+Rif',
+  '40 doublings\n+Rif')
 
+squish_predrug_x <- 0.55
+summary[, timepoint := as.numeric(timepoint)]
+summary[timepoint == -1, timepoint := 1-squish_predrug_x*2]
+summary[timepoint == 0, timepoint := 1-squish_predrug_x]
 
-ggplot(summary, aes(x=timepoint, y=meanRatio, color=nickname)) + 
-  geom_errorbar(aes(ymin=meanRatio-se, ymax=meanRatio+se, alpha = .3), width=.1) +
-  geom_line(aes(alpha = .3)) +
-  geom_point(aes(group = nickname, alpha = .3)) +
-  scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
-                     breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000)) +
-  theme_bw() +
-  facet_wrap(~mut_class) +
-  theme(legend.position="none")
-
-```
-
-```{r plot_rif5}
-summary <- megatable_ratios[, 
-                                        list(
-                                          Count = Count,
-                                          N= .N,
-                                          meanRatio= mean(ratio_to_neutrals),
-                                          sd= sd(ratio_to_neutrals),
-                                          se= sd(ratio_to_neutrals) / sqrt(.N)),
-                                        by=c("ratio_expt", "timepoint", "sample_type", "induction", "bc_read", "nickname", "mut_class")]
-
-
-
-####_________________
-#examine rif5 experiment
-summary <- summary[ratio_expt == "A" | ratio_expt == "A_5", ] #testing rif100 verson
-summary <- summary[timepoint != "-1", ]
-summary <- summary[timepoint != "0", ]
-summary <- summary[sample_type != "msDNA", ]
-
-ggplot(summary, aes(x=timepoint, y=meanRatio, color=nickname)) + 
-  geom_errorbar(aes(ymin=meanRatio-se, ymax=meanRatio+se), width=.1, show.legend = FALSE) +
+fig3b <- ggplot(summary,
+    aes(x=timepoint, y=plas.enrichment, color=mut_class, group=nickname)) + 
+  geom_hline(yintercept=0, color='black', size=1) +
+  geom_vline(xintercept=-Inf, color='black', size=1) +
+  annotate('rect', ymin=0, ymax=Inf, xmin=-Inf, xmax=1.05, fill='black', alpha=0.1, color=NA) +
   geom_line(show.legend = FALSE) +
+  geom_errorbar(aes(ymin=plas.enrichment-se, ymax=plas.enrichment+se),
+    width=.1, show.legend = FALSE, color='black', alpha=0.3, width=0.05) +
   geom_point(aes(group = nickname),show.legend = FALSE) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
-                     breaks = c(.001, .01, .1, 1, 10, 100)) +
-  #theme(legend.position="none") +
-  theme_bw() +
-  facet_wrap(~mut_class)
+                     breaks = c(.001, .01, .1, 1, 10, 100, 1000)) +
+  scale_x_continuous(labels=condition_labels, breaks=summary[, unique(timepoint)], expand=c(0,0.3)) +
+  labs(y='log10 allelic enrichment in population', x='') +
+  facet_grid(mut_class~., space='free_y', scales='free_y', switch='both') +
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2, size=0.5) +
+  theme(text = element_text(size=10)) +
+  theme(
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black', margin = margin(0,0,0,16, "pt")), 
+    panel.spacing=unit(12,'pt'),
+    panel.border=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line.y=element_blank(),
+    axis.line.x=element_blank(),
+    legend.position = 'none')
 
+fig3b
+
+ggsave(fig3b, 'fig3b.pdf', width=5, height=4, units='in', dpi=300)
 
 ```
-
 
