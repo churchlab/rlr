@@ -175,6 +175,8 @@ summary <- summary[timepoint != "-1", ]
 summary <- summary[timepoint != "0", ]
 summary <- summary[sample_type != "msDNA", ]
 
+summary <- summary[mut_class == "Unknown" | mut_class == "Neutral", ]
+
 ggplot(summary, aes(x=timepoint, y=meanRatio, color=nickname)) + 
   geom_errorbar(aes(ymin=meanRatio-se, ymax=meanRatio+se), width=.1, show.legend = FALSE) +
   geom_line(show.legend = FALSE) +
@@ -182,9 +184,15 @@ ggplot(summary, aes(x=timepoint, y=meanRatio, color=nickname)) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
                      breaks = c(.001, .01, .1, 1, 10, 100)) +
   #theme(legend.position="none") +
-  theme_bw() +
+  theme_bw()  +
   facet_wrap(~mut_class)
 
+ggplotly()
+
+```
+
+
+```{r}
 
 ```
 
