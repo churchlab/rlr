@@ -1,0 +1,103 @@
+---
+title: "Fig_4b"
+author: "Max Schubert"
+date: "6/18/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+#library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#dan's suggestion for plotting:
+library(ggrepel)
+
+parent_folder = here::here('fig_4b')
+
+```
+
+```{r get data}
+#can update when i get the new stuff
+test_table = "a3a4.csv"
+
+test_path = paste(parent_folder, test_table, sep = "/")
+test_file_dt = data.table(fread(test_path))
+
+#ditch columns with na's
+#cutting down table to only a few columns
+test_file_dt = Filter(function(x)!all(is.na(x)), test_file_dt) #kills columns with all NA
+test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
+                                        "REF", "ALT",
+                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
+
+```
+
+```{r plot}
+ggplot(test_file_trimmed_dt, aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+  theme(text = element_text(size=18)) +
+  #coord_polar()
+  #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
+  coord_polar() # +
+  #geom_text_repel() +
+  #labs(
+  #  x = "Mutations, by genomic coordinate",
+  #  y = "Depth of coverage",
+  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
+  #  color = "Sample")
+```
+
+```{r zoom_plot}
+#for zoom in on folA locus
+zoomed_dt = test_file_trimmed_dt[POSITION < 60000]
+zoomed_dt = subset(zoomed_dt, EXPERIMENT_SAMPLE_LABEL = "291_303")
+
+
+ggplot(zoomed_dt, aes(x=POSITION, y=DP)) + 
+  geom_col(position = position_dodge(width = 0.9), fill = "#FF6666", size =2 ) +
+  theme_bw() +
+  scale_y_continuous(trans = log10_trans()) +
+  theme(text = element_text(size=24)) +
+  theme_bw() +
+  labs(
+    x = "Mutations, shown at their position on the chromosome",
+    y = "Depth of coverage",
+    title = "Loci conferring TMP resistance in sheared gDNA RLR")
+
+#optional, to inspect plot
+#ggplotly()
+
+
+#version that is less zoomed
+zoomed_dt = test_file_trimmed_dt[POSITION < 1000000]
+zoomed_dt = subset(zoomed_dt, EXPERIMENT_SAMPLE_LABEL = "291_303")
+
+
+ggplot(zoomed_dt, aes(x=POSITION, y=DP)) + 
+  geom_col(position = position_dodge(width = 0.9), fill = "#FF6666", size = 100) +
+  theme_bw() +
+  scale_y_continuous(trans = log10_trans()) +
+  theme(text = element_text(size=24)) +
+  theme_bw() +
+  labs(
+    x = "Mutations, shown at their position on the chromosome",
+    y = "Depth of coverage",
+    title = "Loci conferring TMP resistance in sheared gDNA RLR")
+
+```
+
+
