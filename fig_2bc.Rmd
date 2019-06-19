@@ -170,75 +170,78 @@ binary_summ <- into_summ[,
                           mean_seq_freq = mean(seq_freq),
                           median_seq_freq = median(seq_freq),
                           mean_enrichment = mean(enrichment.post.rif),
+                          median_enrichment = median(enrichment.post.rif),
+                          max_enrichment = max(enrichment.post.rif),
+                          min_enrichment = min(enrichment.post.rif),
+                          logmean_enrichment = 10^mean(log10(enrichment.post.rif)),
                           sd_freq = sd(seq_freq),
                           se_freq = sd(seq_freq) / sqrt(.N),
                           sd_enrichment= sd(enrichment.post.rif),
-                          se_enrichment= sd(enrichment.post.rif) / sqrt(.N)),by=c("nickname", "mut_class", "rif")]
+                          se_enrichment= sd(enrichment.post.rif) / sqrt(.N),
+                          log_se_enrichment= 10^sd(log10(enrichment.post.rif)) / sqrt(.N)
+                          ), by=c("nickname", "mut_class", "rif")]
 
 ```
 
-# first looking at summarized data
-```{r plot_summarized_freq_12.5}
+# plot in groups
+
+```{r grouped_summarized}
 
 current = binary_summ[rif == 12.5]
 
-ggplot(current, aes(x=reorder(nickname,mean_seq_freq), y=mean_seq_freq, color=mut_class, fill = mut_class)) + 
-  geom_errorbar(aes(ymin=mean_seq_freq-se_freq, ymax=mean_seq_freq+se_freq), color="black", alpha = 0.3) +
-  geom_point( size = 2) +
-  #geom_line(aes(alpha = .3)) +
-  scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
+ggplot(current, aes(x=nickname, y=median_enrichment, color=mut_class, fill = mut_class)) + 
+  geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
+  geom_point(size = 2) +
+  scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90,  size = 6, vjust = 1)) +
-  theme(text = element_text(size=18)) +
+  facet_grid(~mut_class, scales='free_x', switch='both') +
   labs(
     x = "Allele",
     y = "Enrichment Ratio",
-    color = "Allele type") #+ # vjust = 1, hjust=1,#+
-  #facet_wrap(~rif, nrow = 2)
-  #theme(legend.position="none")
-
-
-```
-
-```{r plot_summarized_enrichment_12.5}
-
-current = binary_summ[rif == 25]
-
-ggplot(current, aes(x=reorder(nickname,mean_enrichment), y=mean_enrichment, color=mut_class, fill = mut_class)) + 
-  geom_errorbar(aes(ymin=mean_enrichment-se_enrichment, ymax=mean_enrichment+se_enrichment), color="black", alpha = 0.3) +
-  geom_point( size = 2) +
-  #geom_line(aes(alpha = .3)) +
-  scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90,  size = 6, vjust = 1)) +
+    color = "Allele type") + 
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2) +
   theme(text = element_text(size=18)) +
-  labs(
-    x = "Allele",
-    y = "Enrichment Ratio",
-    color = "Allele type") #+ # vjust = 1, hjust=1,#+
-  #facet_wrap(~rif, nrow = 2)
-  #theme(legend.position="none")
-
+  theme(
+    axis.text.x= element_blank(),
+    axis.ticks.x=element_blank(),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    panel.spacing=unit(0,'pt'),
+    panel.border=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
 
 ```
 
 
-```{r plot_summarized_enrichment_facets}
-
-current = binary_summ[(rif == 12.5) | (rif == 25) | (rif == 50)]
-
-ggplot(current, aes(x=reorder(nickname,mean_seq_freq), y=mean_seq_freq, color=mut_class, fill = mut_class)) + 
-  geom_errorbar(aes(ymin=mean_seq_freq-se_enrichment, ymax=mean_seq_freq+se_enrichment), color="black") +
-  geom_point() +
-  #geom_line(aes(alpha = .3)) +
-  scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
+```{r plot_concentration_change}
+ggplot(binary_summ[mut_class=='Drug_resistance'], aes(x=rif, y=median_enrichment, group=nickname)) + 
+  geom_linerange(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
+  geom_point() + geom_line() +
+  scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90,  size = 6, vjust = 1)) + # vjust = 1, hjust=1,#+
-  facet_wrap(~rif, nrow = 1)
-  #theme(legend.position="none")
-
+  facet_grid(~mut_class, scales='free_x', switch='both') +
+  labs(
+    x = "Allele",
+    y = "Enrichment Ratio",
+    color = "Allele type") + 
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2) +
+  theme(text = element_text(size=18)) +
+  scale_x_log10() +
+  theme(
+    axis.text.x= element_blank(),
+    axis.ticks.x=element_blank(),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    panel.spacing=unit(0,'pt'),
+    panel.border=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
 
 ```
