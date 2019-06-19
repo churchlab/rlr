@@ -16,7 +16,9 @@ library(plyr)
 require(ggplot2)
 require(data.table)
 require(scales)
+library(grid)
 library(gridExtra)
+library(cowplot)
 library(here)
 library(ggpubr)
 library(here)
@@ -185,29 +187,36 @@ binary_summ <- into_summ[,
 
 # plot in groups
 
-```{r grouped_summarized}
+```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
+
+color_vals = c('grey44','darkorange3','darkorange2','darkorange')
+
+addline_format <- function(x,...){gsub(' ','\n',x)}
+
+
 current = binary_summ[rif == 12.5]
+current[, mut_class := factor(
+  mut_class,
+  levels=unique(mut_class)[c(2,1,3,4,5)],
+  labels=addline_format(unique(mut_class)[c(2,1,3,4,5)]))]
 
-#current[color_cat == 1, color_set := 'gray44']
-#current[color_cat == 2, color_set := 'gray44']
-#current[color_cat == 3, color_set := 'gray44']
-#current[color_cat == 4, color_set := 'gray44']
 
-
-ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color = color_cat, fill = mut_class)) + 
+fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
   geom_point(size = 2) +
   scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100))) +
+                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
+                     limits=10^(c(-5.2,1.6))) +
+  scale_x_discrete(expand=c(0.16,0.16)) +
   facet_grid(~mut_class, scales='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "log10 Enrichment\nat 12.5 µg/mL Rifampicin",
+    y = "Allelic enrichment\n in 12.5 µg/mL Rifampicin (log10)",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=10)) +
   theme(
     axis.text.x= element_blank(),
     axis.ticks.x=element_blank(),
@@ -219,18 +228,24 @@ ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, 
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
     legend.position = 'none') +
-  scale_colour_manual(name = "RpoB Allele Type",values = levels('color_cat') )
+  scale_colour_manual(name = "RpoB Allele Type", values = color_vals)
+
+fig2b
+
+ggsave('fig2c.pdf', plot=fig2b, width=6, height=3, units='in', dpi=300)
 
 ```
 
 
-```{r plot_concentration_change}
-ggplot(binary_summ[mut_class=='Drug_resistance'], aes(x=rif, y=median_enrichment, group=nickname)) + 
+```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
+fig2c <- ggplot(binary_summ[mut_class=='rpoB Alleles'], 
+    aes(x=rif, y=median_enrichment, group=nickname, color=as.factor(color_cat))) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3, width=0.03) +  
-  geom_point() + geom_line(position=position_dodge(width=0.03)) +
+  geom_point() + geom_line() +
   scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100))) +
+                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
+                     limits=10^(c(-5.2,1.6))) +
   scale_x_continuous(trans = log_trans(base=10),
                      breaks = c(12.5, 25, 50, 100)) +
   
@@ -240,13 +255,38 @@ ggplot(binary_summ[mut_class=='Drug_resistance'], aes(x=rif, y=median_enrichment
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=10)) +
+  scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
   theme(
     strip.background=element_blank(), strip.placement='outside',
     strip.text=element_text(color='black'), 
-    panel.spacing=unit(0,'pt'),
+    axis.title.x=element_text(margin = margin(12,0,0,0, "pt")), 
     panel.border=element_blank(),
     axis.line=element_line(),
-    legend.position = 'none')
+    legend.position = 'none') 
+
+fig2c
+
+ggsave(here::here('fig2c.pdf'), plot=fig2c, width=3, height=3, units='in', dpi=300)
+
+```
+
+```{r fig2bc, fig.width=6, fig.height=2, units='in', dpi=300}
+
+relative_bc_width = 2
+
+fig2b_comb <- fig2b + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
+fig2c_comb <- fig2c + labs(y='') + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
+grid.newpage()
+fig2bc <- plot_grid(
+  plotlist=list(fig2b, fig2c_comb),
+  align = 'hv',
+  axis='tblr',
+  rel_widths = c(relative_bc_width,1))
+
+fig2bc
+
+ggsave(here::here('fig2bc.pdf'), plot=fig2bc, width=3*(relative_bc_width+1), height=3, units='in', dpi=300)
+
 
 ```
