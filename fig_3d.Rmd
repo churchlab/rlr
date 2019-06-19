@@ -25,7 +25,7 @@ parent_folder = here::here('fig_3d')
 ```{r get data}
 #get RLR trajectory data
 lin.mod.path = parent_folder
-start.data.file = paste(lin.mod.path, "7_18_2018_seq_annotated_megatable_ratios", sep = "/")
+start.data.file = paste(here::here('fig_3b'), "fig3bdata.RData", sep = "/")
 load(start.data.file) #this creates the file megatable ratios
 
 #get clonal growth data
@@ -35,7 +35,12 @@ clonalgrowth.dt = data.table(fread(clonal_growth_path))
 
 ```{r summarize, fit}
 #prepare summary table with stats per donor per sample, NOT per replicate
-summary <- megatable_ratios[, 
+
+megatable5[,
+           ratio_median_neutrals := ratio_to_neutrals, #/ ratio_to_neutrals[timepoint==1],
+           by=c("nickname", "mut_class","replicate")]
+
+summary <- megatable5[, 
                             list(
                               Count = Count,
                               N= .N,
@@ -45,12 +50,12 @@ summary <- megatable_ratios[,
                             by=c("ratio_expt", "timepoint", "sample_type", "induction", "bc_read", "nickname", "mut_class")]
 
 lm_group <- function(dt_subset, byval) {
-  lmod <- lm(log10(ratio_mean_neutrals) ~ timepoint, data= dt_subset[is.finite(ratio_mean_neutrals)])
+  lmod <- lm(log10(ratio_median_neutrals) ~ timepoint, data= dt_subset[is.finite(ratio_median_neutrals)])
   return(list(intercept= lmod$coefficients[1], slope= lmod$coefficients[2], mut_class= dt_subset$mut_class[1]))
 }
 
-megatable_slopes <- megatable_ratios[
-  (ratio_expt == "A" | ratio_expt == "A_5") & (ratio_mean_neutrals > 0) &
+megatable_slopes <- megatable5[
+  (ratio_expt == "A" | ratio_expt == "A_5") & (ratio_median_neutrals > 0) &
     !(timepoint %in% c("0","-1")) & 
     sample_type != 'msDNA' & induction != 'n',
   lm_group(.SD,.BY),
@@ -77,8 +82,8 @@ ggplot(summary, aes(x=timepoint, y=log10(meanRatio), color=nickname)) +
 
 
 ```{r look_at_fewer}
-simple_summ <- summary[mut_class == "Lethal" | mut_class == "Neutral" | mut_class == "Drug_resistance"]
-simple_slopes <- megatable_slopes[mut_class == "Lethal" | mut_class == "Neutral" | mut_class == "Drug_resistance"]
+simple_summ <- summary[mut_class %in% c('Lethal','Neutral','rpoB Alleles')]
+simple_slopes <- megatable_slopes[mut_class %in% c('Lethal','Neutral','rpoB Alleles')]
 
 #write_path = "/Users/Max_Schubert/Dropbox/RLR_e.coli_dropbox/NewNotebook_expts/A_phenotype_in_plates/a27_more_points"
 #write.csv(simple_slopes, paste(write_path, 'simple_slopes.csv', sep = "/"))
@@ -97,7 +102,16 @@ ggplot(simple_summ, aes(x=timepoint, y=log10(meanRatio), color=nickname)) +
 ```{r joint_plot}
 #this is where i had previously switched to seaborn
 
+simple_slopes[nickname=='rpoB_CACTCGGCCCAG_1595_nan', nickname := 'rpoB_CACTCGGCCCAG_1594_nan']
+simple_slopes[nickname=='rpoB_C_1534_T', nickname := 'rpoB_C_1535_T']
 
+indiv_v_rlr <- merge(clonalgrowth.dt, simple_slopes, by.x='hard_desc', by.y='nickname')
+
+ggplot(merge(clonalgrowth.dt, simple_slopes, by.x='hard_desc', by.y='nickname'), 
+  aes(x=slope, y=mean)) + 
+  geom_point() + 
+  stat_smooth(method = "lm", col = "red", se=FALSE) +
+  expand_limits(x = 0, y = 0)
 ```
 
 
