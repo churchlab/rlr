@@ -112,3 +112,18 @@ ggplot(into_plot, aes(x=reorder(hard_desc,mu_normal),y=mu_normal, color= mu_alle
 
 ```
 
+```{r export_for_3D}
+summary3C <- ddply(into_plot, "hard_desc", summarise,
+                           N    = sum(!is.na(mu_normal)),
+                           median = median(mu_normal, na.rm=TRUE),
+                           mean = mean(mu_normal, na.rm=TRUE),
+                           sd   = sd(mu_normal, na.rm=TRUE),
+                           se   = sd / sqrt(N)
+)
+
+write_path = here::here('fig_3d')
+write.csv(summary3C,paste(write_path, 'summary3C.csv', sep = "/"))
+
+```
+
+
