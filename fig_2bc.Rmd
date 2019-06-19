@@ -36,7 +36,7 @@ liblistpath <- paste(parent_folder,"b26_TC_metadata.csv", sep = "/" )
 liblistdt <- data.table(fread(liblistpath))
 
 #### get donors, merge to create annotated table
-allelelistpath <- paste(parent_folder,"allele_annotated_list.csv", sep = "/" )
+allelelistpath <- paste(parent_folder,"allele_annotated_list_UPDATE.csv", sep = "/" )
 seq_annot_dt <- data.table(fread(allelelistpath))
 seq_annot_dt[, bc_read := prodonor_seq]
 
@@ -179,17 +179,22 @@ binary_summ <- into_summ[,
                           sd_enrichment= sd(enrichment.post.rif),
                           se_enrichment= sd(enrichment.post.rif) / sqrt(.N),
                           log_se_enrichment= 10^sd(log10(enrichment.post.rif)) / sqrt(.N)
-                          ), by=c("nickname", "mut_class", "rif")]
+                          ), by=c("nickname", "mut_class", "rif", "color_cat", "rpoB allele type")]
 
 ```
 
 # plot in groups
 
 ```{r grouped_summarized}
-
 current = binary_summ[rif == 12.5]
 
-ggplot(current, aes(x=nickname, y=median_enrichment, color=mut_class, fill = mut_class)) + 
+#current[color_cat == 1, color_set := 'gray44']
+#current[color_cat == 2, color_set := 'gray44']
+#current[color_cat == 3, color_set := 'gray44']
+#current[color_cat == 4, color_set := 'gray44']
+
+
+ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color = color_cat, fill = mut_class)) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
   geom_point(size = 2) +
   scale_y_continuous(trans = log_trans(base=10),
@@ -213,7 +218,8 @@ ggplot(current, aes(x=nickname, y=median_enrichment, color=mut_class, fill = mut
     panel.grid.major.x=element_blank(),
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
-    legend.position = 'none')
+    legend.position = 'none') +
+  scale_colour_manual(name = "RpoB Allele Type",values = levels('color_cat') )
 
 ```
 
