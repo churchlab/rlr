@@ -193,11 +193,12 @@ ggplot(current, aes(x=nickname, y=median_enrichment, color=mut_class, fill = mut
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
   geom_point(size = 2) +
   scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)) +
+                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
+                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100))) +
   facet_grid(~mut_class, scales='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "Enrichment Ratio",
+    y = "log10 Enrichment\nat 12.5 µg/mL Rifampicin",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
@@ -219,28 +220,26 @@ ggplot(current, aes(x=nickname, y=median_enrichment, color=mut_class, fill = mut
 
 ```{r plot_concentration_change}
 ggplot(binary_summ[mut_class=='Drug_resistance'], aes(x=rif, y=median_enrichment, group=nickname)) + 
-  geom_linerange(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
-  geom_point() + geom_line() +
+  geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3, width=0.03) +  
+  geom_point() + geom_line(position=position_dodge(width=0.03)) +
   scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)) +
-  facet_grid(~mut_class, scales='free_x', switch='both') +
+                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
+                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100))) +
+  scale_x_continuous(trans = log_trans(base=10),
+                     breaks = c(12.5, 25, 50, 100)) +
+  
   labs(
-    x = "Allele",
-    y = "Enrichment Ratio",
+    x = "Rifampicin Concentration (µg/mL)",
+    y = "log10 Enrichment",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
   theme(text = element_text(size=18)) +
-  scale_x_log10() +
   theme(
-    axis.text.x= element_blank(),
-    axis.ticks.x=element_blank(),
     strip.background=element_blank(), strip.placement='outside',
     strip.text=element_text(color='black'), 
     panel.spacing=unit(0,'pt'),
     panel.border=element_blank(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
     legend.position = 'none')
 
