@@ -136,10 +136,11 @@ fig3b <- ggplot(summary,
     width=.1, show.legend = FALSE, color='black', alpha=0.3, width=0.05) +
   geom_point(aes(group = nickname),show.legend = FALSE) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
-                     breaks = c(.001, .01, .1, 1, 10, 100, 1000)) +
+                     breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
   scale_x_continuous(labels=condition_labels, breaks=summary[, unique(timepoint)], expand=c(0,0.3)) +
-  labs(y='log10 allelic enrichment in population', x='') +
+  labs(y='Allelic enrichment in population', x='') +
   facet_grid(mut_class~., space='free_y', scales='free_y', switch='both') +
+  annotation_logticks(sides = "l") +
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2, size=0.5) +
   theme(text = element_text(size=10)) +
