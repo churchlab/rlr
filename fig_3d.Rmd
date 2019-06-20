@@ -56,7 +56,7 @@ lm_group <- function(dt_subset, byval) {
 
 megatable_slopes <- megatable5[
   (ratio_expt == "A" | ratio_expt == "A_5") & (ratio_median_neutrals > 0) &
-    !(timepoint %in% c("0","-1")) & 
+    (timepoint %in% c(1,2)) & 
     sample_type != 'msDNA' & induction != 'n',
   lm_group(.SD,.BY),
   by='nickname']
@@ -94,24 +94,42 @@ ggplot(simple_summ, aes(x=timepoint, y=log10(meanRatio), color=nickname)) +
   geom_point(aes(group = nickname),show.legend = FALSE) +
   scale_y_continuous(labels = c(.001, .01, .1, 1, 10, 100), breaks=log10(c(.001, .01, .1, 1, 10, 100))) +
   theme_bw() +
-  geom_abline(show.legend = FALSE, data=simple_slopes, aes(intercept=intercept, slope=slope, color=nickname), linetype=2) +
+  geom_abline(show.legend = FALSE, data=simple_slopes, aes(intercept=intercept, slope=slope, color=nickname), 
+    linetype=2) +
   facet_wrap(~mut_class)
-
 ```
 
-```{r joint_plot}
-#this is where i had previously switched to seaborn
+```{r 3d, fig.height=5, fig.width=4, dpi=300}
 
+# dirty fix to harmonize allele names
 simple_slopes[nickname=='rpoB_CACTCGGCCCAG_1595_nan', nickname := 'rpoB_CACTCGGCCCAG_1594_nan']
 simple_slopes[nickname=='rpoB_C_1534_T', nickname := 'rpoB_C_1535_T']
+# add wildtype to slopes explicitly
+simple_slopes_final <- rbind(simple_slopes, data.table(nickname='WT', intercept=0, slope=0, mut_class='Neutral'))
 
-indiv_v_rlr <- merge(clonalgrowth.dt, simple_slopes, by.x='hard_desc', by.y='nickname')
+indiv_v_rlr <- merge(clonalgrowth.dt, simple_slopes_final, by.x='hard_desc', by.y='nickname')
 
-ggplot(merge(clonalgrowth.dt, simple_slopes, by.x='hard_desc', by.y='nickname'), 
-  aes(x=slope, y=mean)) + 
+#slope_fit <- indiv_v_rlr[, cor.test(slope, mean-1, method=c("pearson"))]
+slope_fit <- indiv_v_rlr[, cor.test(slope, log10(mean), method=c("pearson"))]
+#slope_fit <- indiv_v_rlr[, cor.test(2^slope, mean, method=c("pearson"))]
+
+p.val <- format(slope_fit$p.value, scientific=TRUE, digits=3)
+pearson_r <- round(slope_fit$estimate, 3)
+
+fig_3d <- ggplot(indiv_v_rlr, 
+  aes(x=slope, y=log10(mean), ymin=log10(mean-se), ymax=log10(mean+se))) + 
+  #aes(x=slope, y=mean, ymin=mean-se, ymax=mean+se)) + 
   geom_point() + 
+  geom_errorbar(width=0.05) +
+  labs(x='RLR relative enrichment (rel. to WT)', y='clonally measured log(µ) (rel to. WT)') +
   stat_smooth(method = "lm", col = "red", se=FALSE) +
-  expand_limits(x = 0, y = 0)
+  annotate(geom='text', label=paste0('r = ',pearson_r,'\n','p=',p.val), y=0.25, x=0.25) +
+  theme(text = element_text(size=10))
+
+fig_3d
+
+ggsave(here::here('fig_3d.pdf'), plot=fig_3d, width=3, height=3, units='in', dpi=300)
+
 ```
 
 
