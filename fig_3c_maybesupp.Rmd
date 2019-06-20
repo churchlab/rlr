@@ -83,6 +83,10 @@ total_merged <- combined[metadata, on = c("plate", "well"), nomatch = 0]
 
 ### normalize
 total_merged[, mean_WT := mean(mu_hourly[hard_desc == "WT"]), by=c('plate', 'rep')]
+
+#total_merged[, mu_normal := mu_hourly/mean_WT, by=c('plate', 'well')]
+
+# subtract WT rate instead of adding
 total_merged[, mu_normal := mu_hourly/mean_WT, by=c('plate', 'well')]
 
 ```
@@ -104,7 +108,7 @@ ggplot(into_plot, aes(x=reorder(hard_desc,mu_normal),y=mu_normal, color= mu_alle
   theme_bw() +
   theme(axis.text.x = element_text(angle =60, vjust = 1, hjust=1, size = 12),
         axis.text.y = element_text(size = 12)) +
-  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) + #,trans = log2_trans(),) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2),trans = log10_trans(),) +
   #scale_color_gradient(low="blue", high="red") +
   #scale_color_brewer(palette = "Spectral") +
   scale_color_distiller(palette = "Spectral") #+
