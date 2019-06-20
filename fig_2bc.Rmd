@@ -24,6 +24,7 @@ library(ggpubr)
 library(here)
 
 parent_folder <- here::here('fig_2bc')
+source(here::here('constants.R'))
 ```
 
 ```{r mergebins_liblist}
@@ -212,11 +213,11 @@ fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(co
   facet_grid(~mut_class, scales='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "Allelic enrichment\n in 12.5 µg/mL Rifampicin (log10)",
+    y = "Allelic enrichment, (log10)\n 12.5 µg/mL Rifampicin",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=10)) +
+  theme(text = element_text(size=fig_font_size)) +
   theme(
     axis.text.x= element_blank(),
     axis.ticks.x=element_blank(),
@@ -250,17 +251,17 @@ fig2c <- ggplot(binary_summ[mut_class=='rpoB Alleles'],
                      breaks = c(12.5, 25, 50, 100)) +
   
   labs(
-    x = "Rifampicin Concentration (µg/mL)",
+    x = "Rifampicin Concentration\n(µg/mL)",
     y = "log10 Enrichment",
     color = "Allele type") + 
-  theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=10)) +
   scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
+  theme_linedraw() +
+  theme(text = element_text(size=fig_font_size)) +
   theme(
     strip.background=element_blank(), strip.placement='outside',
     strip.text=element_text(color='black'), 
-    axis.title.x=element_text(margin = margin(12,0,0,0, "pt")), 
+    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
     panel.border=element_blank(),
     axis.line=element_line(),
     legend.position = 'none') 
@@ -273,20 +274,22 @@ ggsave(here::here('fig2c.pdf'), plot=fig2c, width=3, height=3, units='in', dpi=3
 
 ```{r fig2bc, fig.width=6, fig.height=2, units='in', dpi=300}
 
+total_width=figure_width
 relative_bc_width = 2
+total_height=total_width/(relative_bc_width+1)
 
 fig2b_comb <- fig2b + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
 fig2c_comb <- fig2c + labs(y='') + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
 grid.newpage()
 fig2bc <- plot_grid(
-  plotlist=list(fig2b, fig2c_comb),
+  plotlist=list(fig2b_comb, fig2c_comb),
   align = 'hv',
   axis='tblr',
   rel_widths = c(relative_bc_width,1))
 
 fig2bc
 
-ggsave(here::here('fig2bc.pdf'), plot=fig2bc, width=3*(relative_bc_width+1), height=3, units='in', dpi=300)
+ggsave(here::here('fig2bc.pdf'), plot=fig2bc, width=total_width, height=total_height, units='in', dpi=300)
 
 
 ```
