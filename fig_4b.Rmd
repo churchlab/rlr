@@ -23,6 +23,7 @@ library(plotly)
 library(ggrepel)
 
 parent_folder = here::here('fig_4b')
+source(here::here('constants.R'))
 
 ```
 
@@ -46,19 +47,37 @@ test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
 ```
 
 ```{r plot}
+
+test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
+
 ggplot(test_file_trimmed_dt, aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL)) + 
   geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
-  theme(text = element_text(size=18)) +
-  #coord_polar()
+  theme(text = element_text(size=18))
   #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
-  coord_polar() # +
+  #coord_polar() # +
   #geom_text_repel() +
   #labs(
   #  x = "Mutations, by genomic coordinate",
   #  y = "Depth of coverage",
   #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
   #  color = "Sample")
+
+# this is stil in progress...
+ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+    theme_bw() +
+    theme(text = element_text(size=18)) + facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
+    theme_linedraw() +
+    theme(text = element_text(size=fig_font_size)) +
+    theme(
+      strip.background=element_blank(), strip.placement='outside',
+      strip.text=element_text(color='black'), 
+      axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+      panel.border=element_blank(),
+      axis.line=element_line(),
+      legend.position = 'none') 
+
 ```
 
 ```{r zoom_plot}
