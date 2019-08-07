@@ -1,0 +1,397 @@
+---
+title: "fig_S1A_growth"
+author: "Max Schubert"
+date: "8/7/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup}
+#load libraries
+library(data.table)
+library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(RColorBrewer)
+
+
+parent_folder = here::here('supplemental_figures/fig_S1A')
+```
+
+
+```{r get_data}
+#paths to data tables, output by matlab
+base_path = parent_folder
+
+pr1a = paste(base_path,"PC1A.csv", sep = "/" )
+pr1a_2 = paste(base_path,"PC1A_2.csv", sep = "/" )
+pr1b = paste(base_path,"PC1B.csv", sep = "/" )
+pr1b_2 = paste(base_path,"PC1B_2.csv", sep = "/" )
+pr2a = paste(base_path,"PC2A.csv", sep = "/" )
+pr2a_2 = paste(base_path,"PC2A_2.csv", sep = "/" )
+pr2b = paste(base_path,"PC2B.csv", sep = "/" )
+pr2b_2 = paste(base_path,"PC2B_2.csv", sep = "/" )
+
+#todo: get plate map, tx annotations
+#################
+platemap = paste(base_path, "platemaps.csv", sep = "/")
+txs = paste(base_path, "txs.csv", sep = "/")
+
+#make into datatables
+pr1a.dt = data.table(fread(pr1a ))
+pr1a_2.dt = data.table(fread(pr1a_2 ))
+pr1b.dt = data.table(fread(pr1b ))
+pr1b_2.dt = data.table(fread(pr1b_2 ))
+pr2a.dt = data.table(fread(pr2a ))
+pr2a_2.dt = data.table(fread(pr2a_2 ))
+pr2b.dt = data.table(fread(pr2b ))
+pr2b_2.dt = data.table(fread(pr2b_2 ))
+
+################ todo
+platemap.dt = data.table(fread(platemap))
+txmap.dt = data.table(fread(txs))
+
+```
+
+
+```{r reformat_data}
+
+#label all the plates, including replicates, rbind all data together
+pr1a.dt$set = 1
+pr1a_2.dt$set = 1
+pr1b.dt$set = 1
+pr1b_2.dt$set = 1
+pr2a.dt$set = 2
+pr2a_2.dt$set = 2
+pr2b.dt$set = 2
+pr2b_2.dt$set = 2
+pr1a.dt$bio_rep = 'a'
+pr1a_2.dt$bio_rep = 'a'
+pr1b.dt$bio_rep = 'b'
+pr1b_2.dt$bio_rep = 'b'
+pr2a.dt$bio_rep = 'a'
+pr2a_2.dt$bio_rep = 'a'
+pr2b.dt$bio_rep = 'b'
+pr2b_2.dt$bio_rep = 'b'
+pr1a.dt$tech_rep = 1
+pr1a_2.dt$tech_rep = 2
+pr1b.dt$tech_rep = 1
+pr1b_2.dt$tech_rep = 2
+pr2a.dt$tech_rep = 1
+pr2a_2.dt$tech_rep = 2
+pr2b.dt$tech_rep = 1
+pr2b_2.dt$tech_rep = 2
+
+combined = rbind(pr1a.dt,
+                 pr1a_2.dt,
+                 pr1b.dt,
+                 pr1b_2.dt,
+                 pr2a.dt,
+                 pr2a_2.dt,
+                 pr2b.dt,
+                 pr2b_2.dt)
+
+#merge platemaps onto combined
+#you expect tx = 0 to drop, these are blank wells anyway
+merged_1 <- combined[platemap.dt, on = c("well","bio_rep"), nomatch = 0]
+#metadata[,c( "oligo","seq","soft_desc","recov") :=NULL]
+
+#merge metadata onto data on tx on plate, well
+total_merged <- merged_1[txmap.dt, on = c("tx", "set"), nomatch = 0]
+
+```
+
+```{r normalize}
+### normalize to gfp control
+#important: the "by" statement here is critical
+total_merged[, mean_GFP := mean(mu_hourly[desc == "gfp/yfp"]), by=c('set', 'bio_rep','tech_rep')]
+total_merged[, mu_normalGFP := mu_hourly/mean_GFP, by=c('set', 'bio_rep','tech_rep')]
+#also normalize to scrambled? why not? might drop GFP if it's weird
+total_merged[, mean_scrambled := mean(mu_hourly[desc == "scramble/empty"]), by=c('set', 'bio_rep','tech_rep')]
+total_merged[, mu_normalscrambled := mu_hourly/mean_scrambled, by=c('set', 'bio_rep','tech_rep')]
+
+#take means across technical reps (??forgoing this for now)
+#check whether technical reps correlate?
+#is technical noise more significant than well/well variation? or vice versa?
+
+```
+
+```{r plot}
+### version paired
+
+#fix the x labels
+addline_format <- function(x,...){
+  gsub(',','\n',x)
+}
+x_labels <- addline_format(c("rpoB 1721,C>A",
+                             "rpoB 1546,G>T",
+                             "rpoB 1714,A>C",
+                             "gyrA 248,C>T",
+                             "rpoB 1594,delete12bp",
+                             "Scrambled sequence",
+                             "rpoB 443,A>T",
+                             "gyrA 248,C>T (Reverse-complement)",
+                             "rpoB 1547,A>G",
+                             "lacZ,KO",
+                             "rpoB 1538,A>C",
+                             "GFP Control",
+                             "rpoB 1535,C>T"))
+
+into_plot = total_merged
+ggplot(into_plot, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP, color = as.factor(set))) +
+  geom_boxplot(position = position_dodge(0.7), width = 0.5) + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1, size = 12), # 
+        axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +
+  labs(
+    x = "Retron Donor Sequence",
+    y = "Growth Rate (normalized to GFP control)",
+    title = "Effect of retron vector on growth rate",
+    color = "Retron vector") +
+  scale_x_discrete(labels = x_labels)
+
+
+```
+```{r summarized_plot}
+into_plot = total_merged
+ggplot(into_plot, aes(x=interaction(Vector_type, donor_type),y=mu_normalGFP, color = Vector_type)) +
+  geom_jitter(width = .2, size = 3) +
+  geom_boxplot(position = position_dodge(0.7), width = 0.5, alpha = 0.7,
+               outlier.shape = NA) + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1, size = 12), # 
+        axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +
+  labs(
+    x = "Retron Donor Sequence",
+    y = "Growth Rate (normalized to GFP control)",
+    title = "Effect of retron vector on growth rate",
+    color = "Retron vector") 
+  #scale_x_discrete(labels = x_labels)
+```
+
+```{r another plot}
+
+#### plot some shit:
+#list statistical comparisons
+my_comparisons <- list( c("C_1721_A", "gfp/yfp"),
+                        c("G_1546_T", "gfp/yfp"),
+                        c("A_1714_C", "gfp/yfp"),
+                        c("scramble/empty", "gfp/yfp"),
+                        c("gyrA_248C_T", "gfp/yfp"),
+                        c("1594delete12", "gfp/yfp"),
+                        c("A_443_T", "gfp/yfp"),
+                        c("lacZ_KO", "gfp/yfp"),
+                        c("gyrA_248C_T_OTHERSTRAND", "gfp/yfp"),
+                        c("rpoB1547A.G","gfp/yfp"),
+                        c("C_1535_T","gfp/yfp"),
+                        c("A_1538_C","gfp/yfp"))
+
+#optional filter statements
+#into_plot <- total_merged[total_merged$comments != 'very late growth?', ]
+#into_plot[, mu_allele := mean(mu_normal), by=c('hard_desc')] #mean of mu, for plotting, coloring
+
+#into_plot = total_merged
+
+
+#set 1
+set1 <- total_merged[total_merged$set == 1 ]
+set1_summary <- ddply(set1, "desc", summarise,
+                    N    = sum(!is.na(mu_normalGFP)),
+                    median = median(mu_normalGFP, na.rm=TRUE),
+                    mean = mean(mu_normalGFP, na.rm=TRUE),
+                    sd   = sd(mu_normalGFP, na.rm=TRUE),
+                    se   = sd / sqrt(N)
+)
+# one <- 
+one <- ggplot(set1, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP )) +
+  #geom_errorbar(data = set1_summary, ymin = (mean - se), ymax = (mean + se) ) +
+  geom_jitter(height = 0.0, width = 0.2, size = 2) + 
+  # set color
+  #color = well +
+  #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", fun.args = list(mult = 1)) +
+  #flip interaction labels so they are vertical, aligned
+  #scale_color_viridis(discrete=TRUE) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle =60, vjust = 1, hjust=1, size = 12),
+        axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +# + 
+  
+  #facet_wrap(~ set) #,trans = log2_trans(),) +
+  #scale_color_gradient(low="blue", high="red") +
+  #scale_color_brewer(palette = "Spectral") +
+  #scale_color_distiller(palette = "Spectral") +
+  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+
+```
+
+#### plot some shit:
+#list statistical comparisons
+my_comparisons <- list( c("C_1721_A", "gfp/yfp"),
+                        c("G_1546_T", "gfp/yfp"),
+                        c("A_1714_C", "gfp/yfp"),
+                        c("scramble/empty", "gfp/yfp"),
+                        c("gyrA_248C_T", "gfp/yfp"),
+                        c("1594delete12", "gfp/yfp"),
+                        c("A_443_T", "gfp/yfp"),
+                        c("lacZ_KO", "gfp/yfp"),
+                        c("gyrA_248C_T_OTHERSTRAND", "gfp/yfp"),
+                        c("rpoB1547A.G","gfp/yfp"),
+                        c("C_1535_T","gfp/yfp"),
+                        c("A_1538_C","gfp/yfp"))
+
+#optional filter statements
+#into_plot <- total_merged[total_merged$comments != 'very late growth?', ]
+#into_plot[, mu_allele := mean(mu_normal), by=c('hard_desc')] #mean of mu, for plotting, coloring
+
+#into_plot = total_merged
+
+
+#set 1
+set1 <- total_merged[total_merged$set == 1 ]
+set1_summary <- ddply(set1, "desc", summarise,
+                    N    = sum(!is.na(mu_normalGFP)),
+                    median = median(mu_normalGFP, na.rm=TRUE),
+                    mean = mean(mu_normalGFP, na.rm=TRUE),
+                    sd   = sd(mu_normalGFP, na.rm=TRUE),
+                    se   = sd / sqrt(N)
+)
+# one <- 
+one <- ggplot(set1, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP )) +
+  #geom_errorbar(data = set1_summary, ymin = (mean - se), ymax = (mean + se) ) +
+  geom_jitter(height = 0.0, width = 0.2, size = 2) + 
+  # set color
+  #color = well +
+  #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", fun.args = list(mult = 1)) +
+  #flip interaction labels so they are vertical, aligned
+  #scale_color_viridis(discrete=TRUE) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle =60, vjust = 1, hjust=1, size = 12),
+        axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +# + 
+  
+  #facet_wrap(~ set) #,trans = log2_trans(),) +
+  #scale_color_gradient(low="blue", high="red") +
+  #scale_color_brewer(palette = "Spectral") +
+  #scale_color_distiller(palette = "Spectral") +
+  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+
+
+#plot for set 2
+set2 <- total_merged[total_merged$set == 2 ]
+
+#set1_summary <- ddply(set1, "desc", summarise,
+#                      N    = sum(!is.na(mu_normalGFP)),
+#                      median = median(mu_normalGFP, na.rm=TRUE),
+#                      mean = mean(mu_normalGFP, na.rm=TRUE),
+#                      sd   = sd(mu_normalGFP, na.rm=TRUE),
+#                      se   = sd / sqrt(N)
+#)
+
+two <- ggplot(set2, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP )) +
+    geom_boxplot() +
+    geom_jitter(height = 0.0, width = 0.2, size = 2) + 
+    # set color
+    #color = well +
+    #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", fun.args = list(mult = 1)) +
+    #flip interaction labels so they are vertical, aligned
+    #scale_color_viridis(discrete=TRUE) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle =60, vjust = 1, hjust=1, size = 12),
+          axis.text.y = element_text(size = 12)) +
+    scale_y_continuous(breaks = c(.5, 1, 1.5, 2))  +
+    stat_compare_means(comparisons = my_comparisons, method = "t.test")
+  
+#grid
+grid.arrange(one, two, nrow = 1)
+
+
+
+#######
+#version with facet wrap:
+into_plot = total_merged
+ggplot(into_plot, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP, color= interaction(tech_rep, bio_rep))) +
+  geom_errorbar(height = 0.0, width = 0.2, size = 2) + 
+  # set color
+  #color = well +
+  #stat_summary(fun.data = mean_cl_normal, geom = "errorbar", fun.args = list(mult = 1)) +
+  #flip interaction labels so they are vertical, aligned
+  #scale_color_viridis(discrete=TRUE) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle =60, vjust = 1, hjust=1, size = 12),
+        axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +
+  facet_wrap(~set)
+  
+  
+  
+
+  
+#try coord flip()
+ggplot(into_plot, aes(x=reorder(desc,mu_normalGFP),y=mu_normalGFP, color = as.factor(set))) +
+  geom_boxplot(position = position_dodge(0.7), width = 0.5) + 
+  theme_bw() +
+  #theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1, size = 12), # 
+  #      axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = c(.5, 1, 1.5, 2)) +
+  labs(
+    x = "Retron Donor Sequence",
+    y = "Growth Rate (normalized to GFP control)",
+    title = "Effect of retron vector on growth rate",
+    color = "Retron vector") +
+  scale_x_discrete(labels = x_labels) +
+  coord_flip()
+
+  
+  
+  
+  
+  
+#optional: inspect points with ggplotly
+ggplotly()
+
+summarya27 <- ddply(into_plot, "hard_desc", summarise,
+                    N    = sum(!is.na(mu_normal)),
+                    median = median(mu_normal, na.rm=TRUE),
+                    mean = mean(mu_normal, na.rm=TRUE),
+                    sd   = sd(mu_normal, na.rm=TRUE),
+                    se   = sd / sqrt(N)
+)
+
+write_path = "/Users/Max_Schubert/Dropbox/RLR_e.coli_dropbox/NewNotebook_expts/A_phenotype_in_plates/a27_more_points"
+write.csv(summarya27,paste(write_path, 'summarya27.csv', sep = "/"))
+
+annotated_dt_summ <- ddply(annotated_dt, c("genotype","locus"), summarise,
+                           N    = sum(!is.na(edited.frac)),
+                           median = median(edited.frac, na.rm=TRUE),
+                           sd   = sd(edited.frac, na.rm=TRUE),
+                           se   = sd / sqrt(N)
+)
+
+
+
+#shiiiiiiiitttttttt can I get new gp3 to better match?
+#took these again with matlab, with range set as .1-.9
+more_path = "/Users/Max_Schubert/Documents/MATLAB/analyze_plate_reader_growth-master"
+
+
+gp3a_more = paste(more_path,"GP3_A.csv", sep = "/" )
+gp3b_more = paste(more_path,"GP3_B_2.csv", sep = "/" )
+gp3a_more.dt = data.table(fread(gp3a_more))
+gp3b_more.dt = data.table(fread(gp3b_more))
+gp3a_more.dt$plate = 3
+gp3b_more.dt$plate = 3
+gp3a_more.dt$rep = "a"
+gp3b_more.dt$rep = "b"
+combined_more = rbind(gp3a_more.dt, gp3b_more.dt)
+more_merged <- combined_more[metadata, on = c("plate", "well"), nomatch = 0]
+
+more_merged[, mean_WT := mean(mu_hourly[hard_desc == "WT"]), by=c('plate', 'rep')]
+more_merged[, mu_normal := mu_hourly/mean_WT, by=c('plate', 'well')]
+

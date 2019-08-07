@@ -270,5 +270,7 @@ fig1cd <- plot_grid(
 fig1cd
 
 ggsave(here::here('fig1cd.pdf'),
-       plot=fig1cd, width=total_width, height=total_height, units='in', dpi=300)
+       plot=fig1cd, width=total_width,
+       height=total_height, units='in', dpi=300,
+       device = cairo_pdf)
 ```
