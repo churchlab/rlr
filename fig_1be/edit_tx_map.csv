@@ -1,0 +1,52 @@
+﻿expt_set,tx,parent,strain_genotype,plas,adapters,comment,plas_desc
+b18,1, 446," ∆recJ, ∆sbcB",325,rpoB,,Beta
+b18,2, 446," ∆recJ, ∆sbcB",368,rpoB,,"PF020,ssb150"
+b18,3, 446," ∆recJ, ∆sbcB",373,rpoB,b1,"PF020,ssb150,mutL*"
+b18,4, 446," ∆recJ, ∆sbcB",,rpoB,b2,"PF020,ssb150,mutL*"
+b18,5, 446," ∆recJ, ∆sbcB",,rpoB,b3,"PF020,ssb150,mutL*"
+b18,6, 446," ∆recJ, ∆sbcB",no DNA control,x,,
+b18,7, 446," ∆recJ, ∆sbcB",324,gyrA,,Beta
+b18,8, 446," ∆recJ, ∆sbcB",371,gyrA,,"PF020,ssb150"
+b18,9, 446," ∆recJ, ∆sbcB",,gyrA,c1,"PF020,ssb150,mutL*"
+b18,10, 446," ∆recJ, ∆sbcB",374,gyrA,c2,"PF020,ssb150,mutL*"
+b18,11, 446," ∆recJ, ∆sbcB",,gyrA,c4,"PF020,ssb150,mutL*"
+b18,12, 453,"∆mutS, ∆recJ, ∆sbcB",325,rpoB,,Beta
+b18,13, 453,"∆mutS, ∆recJ, ∆sbcB",368,rpoB,,"PF020,ssb150"
+b18,14, 453,"∆mutS, ∆recJ, ∆sbcB",373,rpoB,b1,"PF020,ssb150,mutL*"
+b18,15, 453,"∆mutS, ∆recJ, ∆sbcB",,rpoB,b2,"PF020,ssb150,mutL*"
+b18,16, 453,"∆mutS, ∆recJ, ∆sbcB",,rpoB,b3,"PF020,ssb150,mutL*"
+b18,17, 453,"∆mutS, ∆recJ, ∆sbcB",no DNA control,x,,
+b18,18, 453,"∆mutS, ∆recJ, ∆sbcB",324,gyrA,,Beta
+b18,19, 453,"∆mutS, ∆recJ, ∆sbcB",371,gyrA,,"PF020,ssb150"
+b18,20, 453,"∆mutS, ∆recJ, ∆sbcB",,gyrA,c1,"PF020,ssb150,mutL*"
+b18,21, 453,"∆mutS, ∆recJ, ∆sbcB",374,gyrA,c2,"PF020,ssb150,mutL*"
+b18,22, 453,"∆mutS, ∆recJ, ∆sbcB",,gyrA,c4,"PF020,ssb150,mutL*"
+b19,1,446," ∆recJ, ∆sbcB",366,rpoB,,PF020
+b19,2,446," ∆recJ, ∆sbcB",B1,rpoB,B1,"PF020,mutL*"
+b19,3,446," ∆recJ, ∆sbcB",B2,rpoB,B2,"PF020,mutL*"
+b19,4,446," ∆recJ, ∆sbcB",369,gyrA,,PF020
+b19,5,446," ∆recJ, ∆sbcB",C1,gyrA,C1,"PF020,mutL*"
+b19,6,446," ∆recJ, ∆sbcB",C2,gyrA,C2,"PF020,mutL*"
+b19,7,446," ∆recJ, ∆sbcB",No DNA,,,
+b19,8,453,"∆mutS, ∆recJ, ∆sbcB",366,rpoB,,PF020
+b19,9,453,"∆mutS, ∆recJ, ∆sbcB",B1,rpoB,B1,"PF020,mutL*"
+b19,10,453,"∆mutS, ∆recJ, ∆sbcB",375,rpoB,B2,"PF020,mutL*"
+b19,11,453,"∆mutS, ∆recJ, ∆sbcB",369,gyrA,,PF020
+b19,12,453,"∆mutS, ∆recJ, ∆sbcB",376,gyrA,C1,"PF020,mutL*"
+b19,13,453,"∆mutS, ∆recJ, ∆sbcB",C2,gyrA,C2,"PF020,mutL*"
+b19,14,453,"∆mutS, ∆recJ, ∆sbcB",No DNA,,,
+b22,1,494,WT,324,rpoB,,Beta
+b22,2,494,WT,325,gyrA,,Beta
+b22,3,494,WT,noDNA,,,
+b22,4,511,∆mutS,324,rpoB,,Beta
+b22,5,511,∆mutS,325,gyrA,,Beta
+b22,6,511,∆mutS,noDNA,,,
+b22,7,519,"∆mutS, ∆recJ",324,rpoB,,Beta
+b22,8,519,"∆mutS, ∆recJ",325,gyrA,,Beta
+b22,9,519,"∆mutS, ∆recJ",noDNA,,,
+b22,10,518,"∆mutS, ∆sbcB",324,rpoB,,Beta
+b22,11,518,"∆mutS, ∆sbcB",325,gyrA,,Beta
+b22,12,518,"∆mutS, ∆sbcB",noDNA,,,
+b22,13,453,"∆mutS, ∆recJ, ∆sbcB",324,rpoB,,Beta
+b22,14,453,"∆mutS, ∆recJ, ∆sbcB",325,gyrA,,Beta
+b22,15,453,"∆mutS, ∆recJ, ∆sbcB",noDNA,,,

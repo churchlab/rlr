@@ -36,7 +36,7 @@ source(here::here('constants.R'))
 
 ```{r fig1_load_data_and_metadata}
 #from b22 analysis
-fig1c_dir = "fig_1c"
+fig1c_dir = "fig_1be"
 current_folder <- paste(parent_folder, fig1c_dir, sep = '/')
 
 #read in data
@@ -69,7 +69,7 @@ melt_with_metadata2 <- melt_with_metadata[ref_alt, on = "adapters", nomatch = 0]
 
 ```
 
-```{r fig1c_ref_alt}
+```{r fig1be_ref_alt}
 #establishes control sample and normalizes to this, prints into "ratio", kill singletons
 melt_with_metadata2[, is_ref := (bc_read == ref)]
 melt_with_metadata2[, is_alt := (bc_read == alt)]
