@@ -1,0 +1,136 @@
+---
+title: "Fig5_analysis"
+author: "Max Schubert"
+date: "8/13/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+library(data.table)
+library(stringr)
+library(plyr)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(grid)
+library(gridExtra)
+library(cowplot)
+library(here)
+library(ggpubr)
+library(here)
+
+parent_folder <- here::here('fig_5')
+
+```
+
+```{r get data}
+mergebinpath <- paste(parent_folder,"e11e12FHmerged", sep = "/" )
+merged_bins.dt <- data.table(fread(mergebinpath))
+mergemelt.dt <- melt(merged_bins.dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+mergemelt.dt[, SampleWell := str_replace_all(Sample, "_cutcount", "")]
+rm(merged_bins.dt) #remove original
+
+```
+
+```{r get metadata}
+#sample metadata 
+liblistpath <- paste(parent_folder,"I_sample_metadata.csv", sep = "/" )
+liblistdt <- data.table(fread(liblistpath))
+
+#donor sequence metadata
+allelelistpath <- paste(parent_folder,"donor_list_fig5.csv", sep = "/" )
+seq_annot_dt <- data.table(fread(allelelistpath))
+seq_annot_dt[, bc_read := prodonor_seq]
+
+```
+
+```{r merge metadata}
+#merge sample and seq metadata to big table
+annotated_megatable <- liblistdt[mergemelt.dt, on = "SampleWell", nomatch = 0]
+seq_annotated_megatable <- annotated_megatable[seq_annot_dt, on = "bc_read", nomatch = 0]
+
+rows_before_merge = NROW(mergemelt.dt)
+rows_after_merge = NROW(seq_annotated_megatable)
+pct_rows = rows_after_merge / rows_before_merge
+counts_before_merge = sum(mergemelt.dt$Count)
+counts_after_merge = sum(seq_annotated_megatable$Count)
+pct_counts = counts_after_merge / counts_before_merge
+
+rm(mergemelt.dt) #remove original, large file
+rm(annotated_megatable) #remove merged, large file
+
+#print statements about merge efficiency
+print(paste(as.character(rows_before_merge), " rows annotated of ",
+            as.character(rows_after_merge), " total rows, or ",
+            as.character(pct_rows*100), "%", sep = ""))
+
+print(paste(as.character(counts_before_merge), " counts annotated of ",
+            as.character(counts_after_merge), " total counts, or ",
+            as.character(pct_counts*100), "%", sep = ""))
+```
+
+```{r examine initial counts}
+lowpass_filter = 10
+lms36_dt = seq_annotated_megatable[SampleWell == "E11" & Count > lowpass_filter]
+lms37_dt = seq_annotated_megatable[SampleWell == "E12" & Count > lowpass_filter]
+
+hist(lms36_dt$Count)
+hist(lms37_dt$Count)
+
+# @DBG, the above histograms seem totally useless? everything is low? filtering on zeroes or lowpass doesn't help
+
+```
+
+```{r calculate_metrics}
+#calculate frequency for each prodonor, by replicate and timepoint
+seq_annotated_megatable[, total_sample_counts := sum(Count), by='SampleWell']
+seq_annotated_megatable[, seq_freq := Count/total_sample_counts]
+
+#split into 2xstops and recode sets
+stops_dt = seq_annotated_megatable[vial == 4 | vial == 5]
+recode_dt = seq_annotated_megatable[vial == 6 | vial == 7]
+
+#for stops_dt, normalize to _R controls
+stops_dt[, mean_homologous_controls := mean(seq_freq[is_R_split == "R"]), by='SampleWell']
+stops_dt[, ratio_to_homologous_controls := seq_freq/mean_homologous_controls] 
+
+```
+
+
+
+```{r stops_summarized_plot}
+#summarize duplicates
+current_var = quote(ratio_to_homologous_controls)
+
+stops_summ <- stops_dt[,
+                        list(
+                          Count = Count,
+                          N= .N,
+                          mean = mean(eval(current_var)),
+                          sd_var= sd(eval(current_var)),
+                          se_var= sd(eval(current_var)) / sqrt(.N) ),
+                        by=c("SampleWell", "desc_split", "time_hours", "is_R_split", "gene_split")]
+                        #can put whatever you want to plot with, but NOT vial!
+
+
+
+#trying one gene...
+
+into_plot = stops_summ[gene_split == 'coaD'] #also try ackA, acpP, coaD, fabD, folA etc
+ggplot(into_plot, aes(x=time_hours, y=mean, color=desc_split)) + 
+  geom_errorbar(aes(ymin=mean-se_var, ymax=mean+se_var, alpha = .3), width=.1) +
+  geom_line(aes(alpha = .3)) +
+  geom_point(aes(alpha = .3)) +
+  scale_y_continuous(trans = log10_trans()) + #, #limit=c(0.0005, 8), 
+  #                   breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000)) +
+  theme_bw() +
+  facet_wrap(~is_R_split) # +
+  #theme(legend.position="none")
+
+
+```
+
+
