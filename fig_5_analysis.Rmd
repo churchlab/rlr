@@ -73,12 +73,13 @@ print(paste(as.character(counts_before_merge), " counts annotated of ",
 ```
 
 ```{r examine initial counts}
-lowpass_filter = 10
-lms36_dt = seq_annotated_megatable[SampleWell == "E11" & Count > lowpass_filter]
-lms37_dt = seq_annotated_megatable[SampleWell == "E12" & Count > lowpass_filter]
+lowpass_filter = 0
+lms36_dt = seq_annotated_megatable[SampleWell == "E11" ]
+lms37_dt = seq_annotated_megatable[SampleWell == "E12" ]
 
-hist(lms36_dt$Count)
-hist(lms37_dt$Count)
+#log
+hist(log10(lms36_dt$Count))
+hist(log10(lms37_dt$Count))
 
 # @DBG, the above histograms seem totally useless? everything is low? filtering on zeroes or lowpass doesn't help
 
@@ -87,24 +88,17 @@ hist(lms37_dt$Count)
 ```{r calculate_metrics}
 #calculate frequency for each prodonor, by replicate and timepoint
 seq_annotated_megatable[, total_sample_counts := sum(Count), by='SampleWell']
+seq_annotated_megatable[Count == 0, Count := 1] #insert pseudocount of 1 AFTER taking sum, and BEFORE determining frequency
 seq_annotated_megatable[, seq_freq := Count/total_sample_counts]
 
 #split into 2xstops and recode sets
 stops_dt = seq_annotated_megatable[vial == 4 | vial == 5]
 recode_dt = seq_annotated_megatable[vial == 6 | vial == 7]
 
-#for stops_dt, normalize to _R controls
+#for stops_dt, normalize to _R controls mean
 stops_dt[, mean_homologous_controls := mean(seq_freq[is_R_split == "R"]), by='SampleWell']
-stops_dt[, ratio_to_homologous_controls := seq_freq/mean_homologous_controls] 
-
-```
-
-
-
-```{r stops_summarized_plot}
-#summarize duplicates
-current_var = quote(ratio_to_homologous_controls)
-
+stops_dt[, ratio_to_homologous_controls := seq_freq/mean_homologous_controls]
+#associated summary
 stops_summ <- stops_dt[,
                         list(
                           Count = Count,
@@ -112,15 +106,61 @@ stops_summ <- stops_dt[,
                           mean = mean(eval(current_var)),
                           sd_var= sd(eval(current_var)),
                           se_var= sd(eval(current_var)) / sqrt(.N) ),
-                        by=c("SampleWell", "desc_split", "time_hours", "is_R_split", "gene_split")]
-                        #can put whatever you want to plot with, but NOT vial!
+                        by=c("desc_split", "time_hours", "is_R_split", "gene_split")]
+                        #can put whatever you want to plot with, but NOT vial! or samplewell
+
+
+#for stops_dt, also try normalizing to _R for each gene/donor
+#DONT mix vials or timepoints!!!
+stops_dt[, mean_R_gene_donor := mean(seq_freq[is_R_split == "R"]), by=c('gene_split', 'desc_split',
+                                                                        'vial', 'time_hours')]
+stops_dt[, ratio_R_gene_donor := seq_freq/mean_R_gene_donor]
+#associated summary:
+current_var = quote(ratio_R_gene_donor)
+stops_summ_gene_donor <- stops_dt[,
+                        list(
+                          Count = Count,
+                          seq_freq = seq_freq,
+                          N= .N,
+                          mean = mean(eval(current_var)),
+                          sd_var= sd(eval(current_var)),
+                          se_var= sd(eval(current_var)) / sqrt(.N) ),
+                        by=c("desc_split", "time_hours", "is_R_split", "gene_split")]
 
 
 
+#also try normalizing for each gene, pooling the donors
+#DONT mix vials or timepoints!!!
+stops_dt[, mean_R_gene := mean(seq_freq[is_R_split == "R"]), by=c('gene_split', 'vial',
+                                                                  'time_hours')]
+stops_dt[, ratio_R_gene := seq_freq/mean_R_gene] 
+#associated summary across vials:
+current_var = quote(ratio_R_gene)
+stops_summ_gene <- stops_dt[,
+                        list(
+                          Count = Count,
+                          seq_freq = seq_freq,
+                          N= .N,
+                          mean = mean(eval(current_var)),
+                          sd_var= sd(eval(current_var)),
+                          se_var= sd(eval(current_var)) / sqrt(.N) ),
+                        by=c("time_hours", "is_R_split", "gene_split")]
+```
+
+
+
+```{r stops_summarized_plot}
 #trying one gene...
+a_few_genes = c('coaD','ackA', 'acpP')
+first_10_genes = head(unique(stops_summ_gene$gene_split),10)
+first_20_genes = head(unique(stops_summ_gene$gene_split),20)
 
-into_plot = stops_summ[gene_split == 'coaD'] #also try ackA, acpP, coaD, fabD, folA etc
-ggplot(into_plot, aes(x=time_hours, y=mean, color=desc_split)) + 
+into_plot = stops_summ_gene[gene_split %in% first_20_genes]
+
+# shape=desc_split,
+
+#also try ackA, acpP, coaD, fabD, folA etc
+ggplot(into_plot, aes(x=time_hours, y=mean,  color = gene_split)) + 
   geom_errorbar(aes(ymin=mean-se_var, ymax=mean+se_var, alpha = .3), width=.1) +
   geom_line(aes(alpha = .3)) +
   geom_point(aes(alpha = .3)) +
@@ -130,6 +170,25 @@ ggplot(into_plot, aes(x=time_hours, y=mean, color=desc_split)) +
   facet_wrap(~is_R_split) # +
   #theme(legend.position="none")
 
+```
+
+
+```{r look_at_enriched_examples}
+#some genes appear to become more enriched. can i figure out why this is? I think it's just low counts
+enriched_examples = c('dnaA', 'dxr', 'dapB', 'folK')
+
+into_plot = stops_summ_gene[gene_split %in% first_10_genes]
+
+ggplot(into_plot, aes(x=time_hours, y=mean,  color = gene_split)) + 
+  geom_errorbar(aes(ymin=mean-se_var, ymax=mean+se_var, alpha = .3), width=.1) +
+  geom_line(aes(alpha = .3)) +
+  geom_point(aes(alpha = .3, size = Count)) +
+  scale_y_continuous(trans = log10_trans()) + #, #limit=c(0.0005, 8), 
+  #                   breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000)) +
+  theme_bw() +
+  facet_wrap(~is_R_split) 
+  # +
+  #theme(legend.position="none")
 
 ```
 
