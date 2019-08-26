@@ -16,11 +16,10 @@ library(stringr)
 library(plyr)
 library(gridExtra)
 require(ggplot2)
-require(data.table)
 require(scales)
 library(ggpubr)
 library(plotly)
-#library(dplyr)
+library(here)
 
 
 parent_folder = here::here('supplemental_figures/figS2')
@@ -90,6 +89,7 @@ cutcount_dt <- data.table(fread(cutcount_file))
 
 
 ## ok lets visualize the controls
+# this is s2B, editing controls
 ```{r plot h1}
 h1 <- melt_with_fedit[expt == 'H1']
 
@@ -140,6 +140,7 @@ ggsave(here::here('supplemental_figures/fig_s2.pdf'),
 ```
 
 # ok what about h7
+#this is s3A, PF020 efficiency across genotypes
 ```{r}
 
 h7 <- melt_with_fedit[expt == 'H7']
@@ -204,12 +205,12 @@ ggsave(here::here('supplemental_figures/fig_s3A.pdf'), plot=fig_supp3,
 #ggplotly()
 ```
 
-
+#figure S3B
 ```{r h4_slide}
 h4 <- melt_with_fedit[expt == 'H4']
-#manual fix for bMS_446, 453 genotypes
 
-#to make Xlabels have multiple lines, instead of comma and space:
+
+#manual fix for position column
 ditch_pre <- function(x,...){
   gsub('gyrA_pos_','',x)
 }
@@ -220,21 +221,23 @@ ditch_post <- function(x,...){
 h4[,position := as.integer(ditch_post(ditch_pre(more_desc)))]
 h4_no_negative = h4[desc != "is5"]
 
-y_breaks = c(.001, .01, .1, .25, .5, .9, 1)
+y_breaks = c(.1, .25, .5, .9, 1)
+x_breaks = c(10, 20, 30, 40, 50 , 60 , 70 , 80 , 90)
 
 fig_supp3B <- ggplot(h4_no_negative, aes(x=position, y=fraction_edited, color=as.factor(position))) + 
-  geom_jitter(width = 0.3, size = 2) +
+  geom_jitter(width = 0.3, size = 2, alpha = 0.7) +
   geom_boxplot(outlier.shape = NA, alpha = 0.5) +
-  theme_bw() +
+  theme_linedraw() +
   scale_y_continuous(breaks = y_breaks,
-                     labels = make_percent(y_breaks),
-                     trans = log10_trans()) +
-  theme(text = element_text(size=18)) +
+                     labels = make_percent(y_breaks), trans = log10_trans()) +
+  scale_x_continuous(breaks = x_breaks) +
+  theme(text = element_text(size=18),
+        legend.position = "none") +
   labs(
-    x = "Heterology position within 90-mer donor segment",
-    y = "Fraction Edited",
-    color = "") 
+    x = "Heterology position (90-mer donor)",
+    y = "Fraction Edited") 
 
+fig_supp3B
 
 ggsave(here::here('supplemental_figures/fig_s3B.pdf'), plot=fig_supp3B,
        width=5, height=3, units='in', dpi=300,

@@ -1,0 +1,119 @@
+---
+title: "H10_editing_re_analysis"
+author: "Max Schubert"
+date: "8/21/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#library(dplyr)
+
+
+parent_folder <- here::here('supplemental_figures/figS3C')
+```
+
+## reanalysis of experiment "H10"
+
+```{r get_data}
+#different places than last time
+data_dir = parent_folder
+analysis_dir = parent_folder
+
+#data
+edit_data_name = "h10_merge_bins_out"
+edit_data_file = paste(data_dir, edit_data_name, sep = "/")
+edit_data_dt <- data.table(fread(edit_data_file))
+edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+#use Sample_ID to merge to metadata
+edit_data_melt[, well := str_replace_all(Sample, "_cutcount", "")]
+edit_data_melt[, col := as.integer(gsub("[^0-9]", "", well))]
+```
+
+```{r read_in_metadata}
+#manifest, describing the sample sequenced
+manifest_name = "col2adapters.csv"
+manifest_file = paste(analysis_dir, manifest_name, sep = "/")
+manifest_dt <- data.table(fread(manifest_file))
+#make smaller version to use as metadata
+metadata = manifest_dt[, c("V1", "Sample_Plate", "adaptrset",
+                "cutadapt_edit_5prime", "cutadapt_edit_3prime",
+                "cutadapt_5prime", "cutadapt_3prime", "filename"):=NULL]
+
+
+#merge manifest to edit_data (merge changed from Sample_ID to 'col')
+melt_with_annot <- edit_data_melt[metadata, on = "col", nomatch = 0]
+melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values to make table smaller
+```
+
+# measure fraction edited
+
+```{r fraction_edited}
+
+melt_with_annot_nozero[, is_ref := (bc_read == ref)]
+melt_with_annot_nozero[, is_alt := (bc_read == alt)]
+
+#of sequences matching ref or alt, what fraction is edited
+melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='well'][is_ref == TRUE]
+melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
+
+#save this table
+#save_to = 'h10fraction_edited.rds'
+#saveRDS(melt_with_fedit, file = paste(analysis_dir,save_to, sep = '/'))
+
+```
+
+```{r keep track of reads}
+
+total_counts_merged = sum(melt_with_annot_nozero$Count)
+total_counts_ref_or_alt = sum(melt_with_annot_nozero[is_ref == TRUE | is_alt == TRUE]$Count)
+
+
+#compare ref_alt read num to total merged
+print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of reads are ref or alt seqs", sep = " "))
+
+```
+
+
+```{r h10_redo}
+h10 <- melt_with_fedit
+
+fig_s3C <- ggplot(h10, aes(x= locus, y=fraction_edited, color=locus)) + 
+  geom_jitter(width = 0.3, size = 3, alpha = 0.7) +
+  geom_boxplot(alpha = 0.3, outlier.shape = NA) +
+  geom_hline(yintercept=mean(h10$fraction_edited), linetype=2, size=0.5) +
+  theme_linedraw() +
+  coord_cartesian(ylim=c(.5, .95)) +
+  scale_y_continuous(breaks = c(.5, .6, .7, .8, .9),
+                     labels = c("50%", "60%", "70%", "80%", "90%")) +
+  theme(text = element_text(size=14)) +
+  labs(
+    x = "TAG > TAA replacement, by gene",
+    y = "Fraction Edited") +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = 1, hjust=1, size = 10),
+    strip.background=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
+
+
+ggsave(here::here('supplemental_figures/fig_s3C.pdf'), plot=fig_s3C, width=4, 
+       height=3, units='in', dpi=300)
+#ggplotly()
+```
+
