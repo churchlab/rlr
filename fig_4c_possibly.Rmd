@@ -120,3 +120,88 @@ ggplot(zoomed_dt, aes(x=POSITION, y=DP)) +
 ```
 
 
+#############
+
+# G10 data
+
+
+```{r get_G10_data}
+#can update when i get the new stuff
+G10_table = "G10_new_variants.csv"
+G10_path = paste(parent_folder, G10_table, sep = "/")
+G10_dt = data.table(fread(G10_path))
+
+#ditch columns with na's
+#cutting down table to only a few columns
+G10_dt = Filter(function(x)!all(is.na(x)), G10_dt) #kills columns with all NA
+G10_dt_trimmed = G10_dt[,c( "UID", "POSITION",
+                                        "REF", "ALT",
+                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
+
+```
+
+```{r plot_40}
+dt40plus = G10_dt_trimmed[EXPERIMENT_SAMPLE_LABEL %in% c("40A", "40B")]
+
+#convert counts to relative measure of frequency
+dt40plus[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+dt40plus[, snp_freq := DP/snp_obs]
+
+#remove folA snp and see what's left:
+dt40plus_filter = dt40plus[UID != "aa76968f"]
+dt40plus_filter = dt40plus_filter[snp_freq > .001]
+
+dt40plus_faves = dt40plus_filter[INFO_EFF_GENE %in% c('cstA', 'igaA', 'uvrD')]
+
+ggplot(dt40plus_filter, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+  #scale_y_continuous(trans = log10_trans() ) + #limit=c(0.0005, 8), 
+                     #breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
+  geom_text(vjust = 0, data = subset(dt40plus_filter, snp_freq >= .01)) +
+  theme(text = element_text(size=18)) +
+  #coord_polar()
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2) +
+  #coord_polar() # +
+  #geom_text_repel() +
+  #labs(
+  #  x = "Mutations, by genomic coordinate",
+  #  y = "Depth of coverage",
+  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
+  #  color = "Sample")
+```
+
+#38 are the samples with beta recombinase
+```{r plot_38}
+dt38plus = G10_dt_trimmed[EXPERIMENT_SAMPLE_LABEL %in% c("38Aplus", "38Bplus")]
+
+#convert counts to relative measure of frequency
+dt38plus[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+dt38plus[, snp_freq := DP/snp_obs]
+
+#remove folA snp and see what's left:
+#dt40plus_filter = dt40plus[UID != "aa76968f"]
+#dt40plus_filter = dt40plus_filter[snp_freq > .001]
+
+#dt40plus_faves = dt40plus_filter[INFO_EFF_GENE %in% c('cstA', 'igaA', 'uvrD')]
+
+ggplot(dt38plus, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+  #scale_y_continuous(trans = log10_trans() ) + #limit=c(0.0005, 8), 
+                     #breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
+  geom_text(vjust = 0, data = subset(dt38plus, snp_freq >= .01)) +
+  theme(text = element_text(size=18)) +
+  #coord_polar()
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2) +
+  #coord_polar() # +
+  #geom_text_repel() +
+  #labs(
+  #  x = "Mutations, by genomic coordinate",
+  #  y = "Depth of coverage",
+  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
+  #  color = "Sample")
+```
