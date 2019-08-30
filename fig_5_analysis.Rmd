@@ -26,41 +26,62 @@ parent_folder <- here::here('fig_5')
 
 ```
 
+## Get Data
 ```{r get data}
 mergebinpath <- paste(parent_folder,"e11e12FHmerged", sep = "/" )
 merged_bins.dt <- data.table(fread(mergebinpath))
 mergemelt.dt <- melt(merged_bins.dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
 mergemelt.dt[, SampleWell := str_replace_all(Sample, "_cutcount", "")]
 rm(merged_bins.dt) #remove original
-
 ```
 
+## Get Metadata 
 ```{r get metadata}
 #sample metadata 
-liblistpath <- paste(parent_folder,"I_sample_metadata.csv", sep = "/" )
-liblistdt <- data.table(fread(liblistpath))
+liblist_path <- paste(parent_folder,"I_sample_metadata.csv", sep = "/" )
+liblist_dt <- data.table(fread(liblist_path))
+names(liblist_dt)[3] <- 'lib_desc'
 
 #donor sequence metadata
-allelelistpath <- paste(parent_folder,"donor_list_fig5.csv", sep = "/" )
-seq_annot_dt <- data.table(fread(allelelistpath))
+allelelist_path <- paste(parent_folder,"donor_list_fig5.csv", sep = "/" )
+seq_annot_dt <- data.table(fread(allelelist_path))
 seq_annot_dt[, bc_read := prodonor_seq]
+names(seq_annot_dt) <- gsub('_split','', names(seq_annot_dt))
+
+#essential gene metadata
+essentials_path <- paste(parent_folder,"essentials.csv", sep = "/" )
+essentials_dt <- data.table(fread(essentials_path))
 
 ```
 
+## Merge Metadata
 ```{r merge metadata}
 #merge sample and seq metadata to big table
-annotated_megatable <- liblistdt[mergemelt.dt, on = "SampleWell", nomatch = 0]
+annotated_megatable <- liblist_dt[mergemelt.dt, on = "SampleWell", nomatch = 0]
 seq_annotated_megatable <- annotated_megatable[seq_annot_dt, on = "bc_read", nomatch = 0]
 
-rows_before_merge = NROW(mergemelt.dt)
-rows_after_merge = NROW(seq_annotated_megatable)
+rows_before_merge = nrow(mergemelt.dt)
+rows_after_merge = nrow(seq_annotated_megatable)
 pct_rows = rows_after_merge / rows_before_merge
 counts_before_merge = sum(mergemelt.dt$Count)
 counts_after_merge = sum(seq_annotated_megatable$Count)
 pct_counts = counts_after_merge / counts_before_merge
 
+ggplot(
+  seq_annot_dt[, list(bc_read, annot_seq=T)][
+    annotated_megatable, on = "bc_read"][is.na(annot_seq), annot_seq :=F]) + 
+  geom_density(aes(x=Count, color=annot_seq)) + 
+  scale_x_log10() + 
+  scale_color_discrete('Is Sequence Annotated') +
+  labs(
+    x='Log10 Read counts per Seq',
+    y='Seq Probability Density',
+    title='Frequency of Reads vs Annotation') +
+  theme_minimal()
+
 rm(mergemelt.dt) #remove original, large file
 rm(annotated_megatable) #remove merged, large file
+
 
 #print statements about merge efficiency
 print(paste(as.character(rows_before_merge), " rows annotated of ",
@@ -72,124 +93,91 @@ print(paste(as.character(counts_before_merge), " counts annotated of ",
             as.character(pct_counts*100), "%", sep = ""))
 ```
 
+## Initial Counts
+
 ```{r examine initial counts}
-lowpass_filter = 0
-lms36_dt = seq_annotated_megatable[SampleWell == "E11" ]
-lms37_dt = seq_annotated_megatable[SampleWell == "E12" ]
-
-#log
-hist(log10(lms36_dt$Count))
-hist(log10(lms37_dt$Count))
-
-# @DBG, the above histograms seem totally useless? everything is low? filtering on zeroes or lowpass doesn't help
+ggplot(seq_annotated_megatable[SampleWell %in% c('E11','E12')]) +
+  geom_histogram(aes(x=log10(Count)), fill=SampleWell, position='dodge') + 
+  facet_wrap(subpool~.)
 
 ```
+
+## Calculate Metrics
 
 ```{r calculate_metrics}
 #calculate frequency for each prodonor, by replicate and timepoint
 seq_annotated_megatable[, total_sample_counts := sum(Count), by='SampleWell']
+
+ggplot(
+    seq_annotated_megatable[!is.na(vial), list(total_sample_counts= sum(Count)),
+        by=c('SampleWell','time_hours','vial')], 
+    aes(x=factor(vial), y=factor(time_hours))) +
+  geom_tile(aes(fill=log10(total_sample_counts))) + 
+  geom_text(aes(label=SampleWell), color='white')
+
 seq_annotated_megatable[Count == 0, Count := 1] #insert pseudocount of 1 AFTER taking sum, and BEFORE determining frequency
+
 seq_annotated_megatable[, seq_freq := Count/total_sample_counts]
 
 #split into 2xstops and recode sets
-stops_dt = seq_annotated_megatable[vial == 4 | vial == 5]
-recode_dt = seq_annotated_megatable[vial == 6 | vial == 7]
+stops_dt = seq_annotated_megatable[(vial == 4 | vial == 5) & (desc %in% c('0','1'))]
+recode_dt = seq_annotated_megatable[(vial == 6 | vial == 7) & !(SampleWell %in% 'F3')]
 
 #for stops_dt, normalize to _R controls mean
-stops_dt[, mean_homologous_controls := mean(seq_freq[is_R_split == "R"]), by='SampleWell']
-stops_dt[, ratio_to_homologous_controls := seq_freq/mean_homologous_controls]
-#associated summary
-stops_summ <- stops_dt[,
-                        list(
-                          Count = Count,
-                          N= .N,
-                          mean = mean(eval(current_var)),
-                          sd_var= sd(eval(current_var)),
-                          se_var= sd(eval(current_var)) / sqrt(.N) ),
-                        by=c("desc_split", "time_hours", "is_R_split", "gene_split")]
-                        #can put whatever you want to plot with, but NOT vial! or samplewell
+stops_dt[, mean_well := mean(seq_freq[is_R == "R"]), by='SampleWell']
+stops_dt[, ratio_well := seq_freq/mean_well]
 
+stops_dt[, mean_donor := mean(seq_freq[is_R == "R"]), 
+  by=c('gene', 'desc', 'vial', 'time_hours')]
+stops_dt[, ratio_donor := seq_freq/mean_donor]
 
-#for stops_dt, also try normalizing to _R for each gene/donor
-#DONT mix vials or timepoints!!!
-stops_dt[, mean_R_gene_donor := mean(seq_freq[is_R_split == "R"]), by=c('gene_split', 'desc_split',
-                                                                        'vial', 'time_hours')]
-stops_dt[, ratio_R_gene_donor := seq_freq/mean_R_gene_donor]
-#associated summary:
-current_var = quote(ratio_R_gene_donor)
-stops_summ_gene_donor <- stops_dt[,
-                        list(
-                          Count = Count,
-                          seq_freq = seq_freq,
-                          N= .N,
-                          mean = mean(eval(current_var)),
-                          sd_var= sd(eval(current_var)),
-                          se_var= sd(eval(current_var)) / sqrt(.N) ),
-                        by=c("desc_split", "time_hours", "is_R_split", "gene_split")]
-
-
-
-#also try normalizing for each gene, pooling the donors
-#DONT mix vials or timepoints!!!
-stops_dt[, mean_R_gene := mean(seq_freq[is_R_split == "R"]), by=c('gene_split', 'vial',
-                                                                  'time_hours')]
+stops_dt[, mean_R_gene := mean(seq_freq[is_R == "R"]), 
+  by=c('gene', 'vial', 'time_hours')]
 stops_dt[, ratio_R_gene := seq_freq/mean_R_gene] 
-#associated summary across vials:
-current_var = quote(ratio_R_gene)
-stops_summ_gene <- stops_dt[,
-                        list(
-                          Count = Count,
-                          seq_freq = seq_freq,
-                          N= .N,
-                          mean = mean(eval(current_var)),
-                          sd_var= sd(eval(current_var)),
-                          se_var= sd(eval(current_var)) / sqrt(.N) ),
-                        by=c("time_hours", "is_R_split", "gene_split")]
+
+stops_dt <- melt(stops_dt[is_R==''], 
+  measure.vars=grep('ratio_',names(stops_dt), value=T), variable.name='ratio')
+
+stops_dt[, value_norm := value/value[time_hours==0], 
+  by=c('gene', 'desc', 'vial','ratio')]
 ```
 
 
 
 ```{r stops_summarized_plot}
-#trying one gene...
-a_few_genes = c('coaD','ackA', 'acpP')
-first_10_genes = head(unique(stops_summ_gene$gene_split),10)
 first_20_genes = head(unique(stops_summ_gene$gene_split),20)
 
-into_plot = stops_summ_gene[gene_split %in% first_20_genes]
-
-# shape=desc_split,
-
-#also try ackA, acpP, coaD, fabD, folA etc
-ggplot(into_plot, aes(x=time_hours, y=mean,  color = gene_split)) + 
-  geom_errorbar(aes(ymin=mean-se_var, ymax=mean+se_var, alpha = .3), width=.1) +
-  geom_line(aes(alpha = .3)) +
-  geom_point(aes(alpha = .3)) +
-  scale_y_continuous(trans = log10_trans()) + #, #limit=c(0.0005, 8), 
-  #                   breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000)) +
+ggplot(stops_dt[gene %in% first_20_genes], 
+    aes(x=time_hours, y=value_norm, color = factor(desc), group=interaction(vial, desc))) + 
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(trans = log10_trans()) + 
   theme_bw() +
-  facet_wrap(~is_R_split) # +
-  #theme(legend.position="none")
+  facet_grid(ratio~gene)
 
 ```
 
+# Linear Coefficients
+```{r linear_coefficients}
 
-```{r look_at_enriched_examples}
-#some genes appear to become more enriched. can i figure out why this is? I think it's just low counts
-enriched_examples = c('dnaA', 'dxr', 'dapB', 'folK')
+stops_dt[time_hours < 20 & !is.na(value_norm), lm_coeff := lm(log10(value_norm) ~ time_hours)$coefficients[2], by=c('gene','desc','ratio','vial')]
 
-into_plot = stops_summ_gene[gene_split %in% first_10_genes]
-
-ggplot(into_plot, aes(x=time_hours, y=mean,  color = gene_split)) + 
-  geom_errorbar(aes(ymin=mean-se_var, ymax=mean+se_var, alpha = .3), width=.1) +
-  geom_line(aes(alpha = .3)) +
-  geom_point(aes(alpha = .3, size = Count)) +
-  scale_y_continuous(trans = log10_trans()) + #, #limit=c(0.0005, 8), 
-  #                   breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000)) +
+ggplot(stops_dt[gene %in% first_20_genes & time_hours < 20], 
+    aes(x=time_hours, y=value_norm, color = factor(desc), group=interaction(vial, desc))) + 
+  geom_line() +
+  geom_abline(aes(intercept=0, slope=lm_coeff, color = factor(desc)), linetype=2) + 
+  geom_point() +
+  scale_y_continuous(trans = log10_trans()) + 
   theme_bw() +
-  facet_wrap(~is_R_split) 
-  # +
-  #theme(legend.position="none")
+  facet_grid(ratio~gene)
 
+stops_essentials_dt <- merge(
+  essentials_dt, stops_dt, by.x='Gene', by.y='gene', all=T)
+
+ggplot(
+    unique(stops_essentials_dt[!is.na(Gene) & time_hours < 20 & !is.na(`E/N`), 
+    list(lm_coeff, `E/N`, Gene, desc, ratio, vial)])) + 
+  geom_density(aes(x=lm_coeff, color=`E/N`)) + facet_wrap(desc~ratio)
 ```
 
 
