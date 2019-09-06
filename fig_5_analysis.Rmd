@@ -145,10 +145,10 @@ stops_dt[, value_norm := value/value[time_hours==0],
 
 
 ```{r stops_summarized_plot}
-first_20_genes = head(unique(stops_summ_gene$gene_split),20)
+first_20_genes = head(unique(stops_summ_gene$gene_split),20) #should be stops_dt??? MS
 
 ggplot(stops_dt[gene %in% first_20_genes], 
-    aes(x=time_hours, y=value_norm, color = factor(desc), group=interaction(vial, desc))) + 
+  aes(x=time_hours, y=value_norm, color = factor(desc), group=interaction(vial, desc))) + 
   geom_line() +
   geom_point() +
   scale_y_continuous(trans = log10_trans()) + 

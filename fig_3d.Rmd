@@ -123,12 +123,12 @@ fig_3d <- ggplot(indiv_v_rlr,
   geom_errorbar(width=0.05) +
   labs(x='RLR relative enrichment (rel. to WT)', y='clonally measured log(µ) (rel to. WT)') +
   stat_smooth(method = "lm", col = "red", se=FALSE) +
-  annotate(geom='text', label=paste0('r = ',pearson_r,'\n','p=',p.val), y=0.25, x=0.25) +
+  annotate(geom='text', label=paste0('r = ',pearson_r,'\n','p=',p.val), y=0.2, x=0.25) +
   theme(text = element_text(size=10))
 
 fig_3d
 
-ggsave(here::here('fig_3d.pdf'), plot=fig_3d, width=3, height=3, units='in', dpi=300)
+ggsave(here::here('fig_3d.pdf'), plot=fig_3d, width=3, height=3, units='in', dpi=300, useDingbats=FALSE)
 
 ```
 

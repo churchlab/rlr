@@ -45,7 +45,7 @@ test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
 
 ```
 
-```{r plot}
+```{r plot_1000_1500}
 ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
   geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
@@ -53,6 +53,24 @@ ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=
   theme(text = element_text(size=18)) #+
   #coord_polar()
   #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
+  #coord_polar() # +
+  #geom_text_repel() +
+  #labs(
+  #  x = "Mutations, by genomic coordinate",
+  #  y = "Depth of coverage",
+  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
+  #  color = "Sample")
+```
+
+#8/29/2019 trying new stuff
+```{r plot_new}
+ggplot(test_file_dt, aes(x=POSITION, y=DP, color=AF, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(test_file_dt, DP > 1000 )) +
+  theme(text = element_text(size=18)) + #+
+  #coord_polar()
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') #+
   #coord_polar() # +
   #geom_text_repel() +
   #labs(
@@ -142,6 +160,27 @@ G10_dt_trimmed = G10_dt[,c( "UID", "POSITION",
                                         "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
 
 ```
+
+```{r get_muts}
+#load 38a and 38B induced
+induced_all = G10_dt[EXPERIMENT_SAMPLE_LABEL %in% c("38A_induced", "38B_induced", "40A_induced", "40B_induced")]
+
+induced_all[, total_induced_depth := sum(DP), by = c("UID")]
+induced_all = induced_all[,c( "UID", "POSITION",
+                                        "REF", "ALT",
+                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE", "total_induced_depth")]
+
+induced_snps = induced_all[EXPERIMENT_SAMPLE_LABEL %in% c("38A_induced")]
+induced_snps= induced_snps[,c( "UID", "POSITION",
+                                        "REF", "ALT",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE", "total_induced_depth")]
+```
+
 
 ```{r plot_40}
 dt40plus = G10_dt_trimmed[EXPERIMENT_SAMPLE_LABEL %in% c("40A", "40B")]
