@@ -161,3 +161,66 @@ ggsave(here::here('fig_3b.pdf'), plot=fig3b, width=5, height=4, units='in', dpi=
 save('megatable5', file=here::here('fig_3b','fig3bdata.RData'))
 ```
 
+```{r fig3b_summary_version}
+summary <- megatable5[, 
+  list(
+    read.pct = mean(read.pct),
+    N= .N,
+    plas.enrichment= mean(plas.enrichment),
+    sd= sd(plas.enrichment),
+    se= sd(plas.enrichment) / sqrt(.N)),
+  by=c( "timepoint", "sample_type", "induction", "prodonor_seq", "nickname", "mut_class")]
+
+summary <- summary[sample_type != "msDNA" & mut_class %in% c('Lethal','Neutral','rpoB Alleles')]
+summary[, mut_class := factor(mut_class, levels=c('rpoB Alleles', 'Neutral',  'Lethal'))]
+summary[, mut_class := factor(mut_class, levels=c('rpoB Alleles', 'Neutral',  'Lethal'))]
+#only active timepoints for summary version
+summary <- summary[timepoint %in% c(1,2,3)]
+
+
+categories_to_plot <- c('Lethal','Neutral','rpoB Alleles')
+condition_labels <- c(
+  '0',
+  '20',
+  '40')
+
+squish_predrug_x <- 0.55
+summary[, timepoint := as.numeric(timepoint)]
+summary[timepoint == -1, timepoint := 1-squish_predrug_x*2]
+summary[timepoint == 0, timepoint := 1-squish_predrug_x]
+
+fig3b_summ <- ggplot(summary,
+    aes(x=timepoint, y=plas.enrichment, color=mut_class, group=nickname)) + 
+  geom_hline(yintercept=0, color='black', size=1) +
+  geom_vline(xintercept=-Inf, color='black', size=1) +
+  #annotate('rect', ymin=0, ymax=Inf, xmin=-Inf, xmax=1.05, fill='black', alpha=0.1, color=NA) +
+  geom_line(show.legend = FALSE) +
+  geom_errorbar(aes(ymin=plas.enrichment-se, ymax=plas.enrichment+se),
+    width=.1, show.legend = FALSE, color='black', alpha=0.3, width=0.05) +
+  geom_point(aes(group = nickname),show.legend = FALSE) +
+  scale_y_continuous(trans = log10_trans(),
+                     breaks = c(.3, 1, 3, 10, 100, 1000, 10000), 
+                     labels = c("0.3", "1", "3", "10", "100", "1,000", "10,000")) +
+  scale_x_continuous(labels=condition_labels, breaks=summary[, unique(timepoint)], expand=c(0,0.3)) +
+  labs(y='Allelic enrichment', x='Generations') +
+  facet_grid(mut_class~., space='free_y', scales='free_y', switch='both') +
+  annotation_logticks(sides = "l") +
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2, size=0.5) +
+  theme(text = element_text(size=10)) +
+  theme(
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black', margin = margin(0,0,0,16, "pt")), 
+    panel.spacing=unit(12,'pt'),
+    panel.border=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line.y=element_blank(),
+    axis.line.x=element_blank(),
+    legend.position = 'none')
+
+fig3b_summ
+
+ggsave(here::here('fig_3b_summary.pdf'), plot=fig3b_summ, width=4, height=4, units='in', dpi=300, useDingbats=FALSE)
+#save('megatable5', file=here::here('fig_3b','fig3bdata.RData'))
+```
+

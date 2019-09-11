@@ -25,6 +25,12 @@ library(ggrepel)
 parent_folder = here::here('fig_4b')
 source(here::here('constants.R'))
 
+#set global variables for shifting plotting:
+ori_pos = 3900000
+ter_pos = 1700000
+shift_over_value = 1e6
+genome_size = 4641652
+
 ```
 
 ```{r get data}
@@ -46,39 +52,136 @@ test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
 
 ```
 
-```{r plot}
+```{r plot_relative_depth_of_snps}
 
 test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
 
-ggplot(test_file_trimmed_dt, aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL)) + 
-  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
-  theme_bw() +
-  theme(text = element_text(size=18))
-  #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
-  #coord_polar() # +
-  #geom_text_repel() +
-  #labs(
-  #  x = "Mutations, by genomic coordinate",
-  #  y = "Depth of coverage",
-  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
-  #  color = "Sample")
-
-# this is stil in progress...
-ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
-    geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+# this is still in progress...
+after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    geom_freqpoly(stat = "identity", size = 1, alpha = 0.5) + #position = position_dodge(width = 2),
+    geom_jitter(size = 1, alpha = 0.5) +
     theme_bw() +
-    theme(text = element_text(size=18)) + facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
-    theme_linedraw() +
+    theme(text = element_text(size=18)) +
+    facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
+    theme_minimal() +
     theme(text = element_text(size=fig_font_size)) +
+    labs( y = "Coverage Depth (Percent of SNPs observed)",
+          x = "Genomic Position (bp)") +
     theme(
       strip.background=element_blank(), strip.placement='outside',
       strip.text=element_text(color='black'), 
       axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
       panel.border=element_blank(),
+      panel.grid.minor.x=element_blank(),
+      panel.grid.minor.y=element_blank(),
       axis.line=element_line(),
-      legend.position = 'none') 
+      legend.position = 'none') +
+    annotate("text", x = 3900000, y = -.01, label = "O") + #annotate ori
+    annotate("text", x = 1700000, y = -.01, label = "X") #annotate ter
+
+after_coverage_plot
+```
+
+#test version with modulus of x
+```{r plot_relative_depth_of_snps}
+#test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
+#                                        "REF", "ALT",
+#                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+#                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+##                                        "INFO_EFF_AA","INFO_EFF_GT",
+#                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")]#
+
+test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
+
+#shift plot, so that rep origin appears near plot origin
+test_file_trimmed_dt[, position_modulus := (POSITION+shift_over_value)%%(genome_size - shift_over_value)]
+
+# this is still in progress...
+after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    geom_freqpoly(stat = "identity", size = 1, alpha = 1) + #position = position_dodge(width = 2),
+    geom_jitter(size = 1) +
+    theme_bw() +
+    theme(text = element_text(size=18)) +
+    facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
+    theme_minimal() +
+    theme(text = element_text(size=fig_font_size)) +
+    labs( y = "Coverage Depth (Percent of SNPs observed)",
+          x = "Genomic Position (bp) MODULUS") +
+    theme(
+      strip.background=element_blank(), strip.placement='outside',
+      strip.text=element_text(color='black'), 
+      axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+      panel.border=element_blank(),
+      panel.grid.minor.x=element_blank(),
+      panel.grid.minor.y=element_blank(),
+      axis.line=element_line(),
+      legend.position = 'none') +
+    annotate("text",
+             x = (ori_pos+shift_over_value)%%(genome_size - shift_over_value),
+             y = -.01, label = "O") + #annotate ori, adjusted
+    annotate("text",
+             x = (ter_pos+shift_over_value)%%(genome_size - shift_over_value),
+             y = -.01, label = "X") #annotate ter, adjusted
+
+
+after_coverage_plot
+```
+
+
+```{r before_coverage_plot}
+
+samplenum = 's4'
+depthspath <- "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/bwa_sam_bam_depths/"
+path_cov <- paste(depthspath,samplenum, "_depths", sep = "")
+cov <- fread(path_cov)
+names(cov) <- c('chr','pos','count')
+
+#slice into windows, label window with middle base of window
+window_size <- 100
+cov[, window := cut(pos,
+                    breaks=c(seq(0, max(pos), window_size),
+                             max(pos)),
+                    labels=c(seq(window_size/2, max(pos)-window_size/2, window_size),
+                             max(pos)-window_size/2))]
+
+#calculate average depth per window
+#wcov <- cov[, window_dp_mean := mean(count), by=window]
+wcov_new <- wcov[, list(mean_count=mean(count)), by=window]
+
+#shift plot, so that rep origin appears near plot origin
+## can't fucking shift the plot
+
+wcov_new[, position_modulus := (as.numeric(window)+shift_over_value)%%(genome_size - shift_over_value)]
+
+# plot coverage at windows
+#wcov <- wcov[count > 1000]
+before_cov_plot <- ggplot(wcov_new) + 
+  geom_jitter(aes(y=mean_count, x=position_modulus, alpha = 0.001)) +
+  theme_bw() +
+  labs( y = "Coverage Depth (Unique sequences)") + 
+  theme(
+    strip.background=element_blank(), #strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x = element_blank(), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none') +
+  annotate("text", x = 3900000, y = -10, label = "O") + #annotate ori
+  annotate("text", x = 1700000, y = -10, label = "X")
+  #facet_wrap(~variable, scales='free') +
+  #ggtitle(samplenum)
+ #axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")
+before_cov_plot
+```
+
+```{r plot_both}
+
+grid.arrange(before_cov_plot, after_coverage_plot, nrow = 2)
+
 
 ```
+
+
 
 ```{r zoom_plot}
 #for zoom in on folA locus
@@ -118,5 +221,3 @@ ggplot(zoomed_dt, aes(x=POSITION, y=DP)) +
     title = "Loci conferring TMP resistance in sheared gDNA RLR")
 
 ```
-
-
