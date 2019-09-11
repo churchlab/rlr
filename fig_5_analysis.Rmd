@@ -97,7 +97,7 @@ print(paste(as.character(counts_before_merge), " counts annotated of ",
 
 ```{r examine initial counts}
 ggplot(seq_annotated_megatable[SampleWell %in% c('E11','E12')]) +
-  geom_histogram(aes(x=log10(Count)), fill=SampleWell, position='dodge') + 
+  geom_histogram(aes(x=log10(Count), fill=SampleWell), position='dodge') + 
   facet_wrap(subpool~.)
 
 ```
@@ -144,9 +144,13 @@ stops_dt[, value_norm := value/value[time_hours==0],
 
 
 
-```{r stops_summarized_plot}
-first_20_genes = head(unique(stops_summ_gene$gene_split),20) #should be stops_dt??? MS
 
+ 
+```{r stops_summarized_plot, fig.width=20, fig.height=10}
+#first_20_genes = head(unique(stops_summ_gene$gene_split),20)
+first_20_genes = head(unique(stops_dt$gene),20)
+
+#MS update to use first_20_genes datatable
 ggplot(stops_dt[gene %in% first_20_genes], 
   aes(x=time_hours, y=value_norm, color = factor(desc), group=interaction(vial, desc))) + 
   geom_line() +
@@ -158,7 +162,7 @@ ggplot(stops_dt[gene %in% first_20_genes],
 ```
 
 # Linear Coefficients
-```{r linear_coefficients}
+```{r linear_coefficients, fig.width=20, fig.height=10}
 
 stops_dt[time_hours < 20 & !is.na(value_norm), lm_coeff := lm(log10(value_norm) ~ time_hours)$coefficients[2], by=c('gene','desc','ratio','vial')]
 
@@ -180,4 +184,39 @@ ggplot(
   geom_density(aes(x=lm_coeff, color=`E/N`)) + facet_wrap(desc~ratio)
 ```
 
+# Incorporate PDT data from Cameron et al
+```{r fig.width=10, fig.height=10}
+pdt_dt <- fread(paste(parent_folder,"cameron_et_al.supp_tab_2.csv", sep = "/" ))
+pdt_dt <- pdt_dt[stops_essentials_dt, on='Gene']
+
+ggplot(pdt_dt) + 
+  geom_point(aes(x=rel_growth, y=log10(rel_cfu))) +
+  labs(x='Rel Growth (Cameron et al.)', y='Rel CFU (Cameron et al.)')
+
+ggplot(pdt_dt) + 
+  geom_point(aes(x=rel_growth, y=lm_coeff)) +
+  labs(x='Rel Growth (Cameron et al.)', y='RLR LM Coefficient (<20 hrs)')
+
+ggplot(pdt_dt[, 
+    list(
+      mean_lm= mean(lm_coeff, na.rm=T), 
+      sd_lm=sd(lm_coeff, na.rm=T), 
+      rel_growth, rel_cfu), 
+    by=c('Gene')]) + 
+  geom_point(aes(x=rel_growth, y=mean_lm)) +
+  geom_linerange(aes(x=rel_growth, y=mean_lm, ymin=mean_lm-sd_lm, ymax=mean_lm+sd_lm)) +
+  labs(x='Rel Growth (Cameron et al.)', y='RLR LM Coefficient (<20 hrs)')
+
+ggplot(pdt_dt[, 
+    list(
+      mean_lm= mean(lm_coeff, na.rm=T), 
+      sd_lm=sd(lm_coeff, na.rm=T), 
+      rel_growth, rel_cfu), 
+    by=c('Gene')]) + 
+  geom_point(aes(x=log10(rel_cfu), y=mean_lm)) +
+  geom_linerange(aes(x=log10(rel_cfu), y=mean_lm, ymin=mean_lm-sd_lm, ymax=mean_lm+sd_lm)) +
+  labs(x='log10 Rel CFU (Cameron et al.)', y='RLR LM Coefficient (<20 hrs)')
+
+
+```
 
