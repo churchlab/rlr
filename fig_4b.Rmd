@@ -52,6 +52,127 @@ test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
 
 ```
 
+#background
+### this communicates that the whole genome is covered, and that coverage is decently even
+```{r before_coverage_data}
+#note, could add more samples later
+samplenum = 's4'
+depthspath <- "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/bwa_sam_bam_depths/"
+path_cov <- paste(depthspath,samplenum, "_depths", sep = "")
+cov <- fread(path_cov)
+names(cov) <- c('chr','pos','count')
+
+#slice into windows, label window with middle base of window
+window_size <- 1000
+cov[, window := cut(pos,
+                    breaks=c(seq(0, max(pos), window_size),
+                             max(pos)),
+                    labels=c(seq(window_size/2, max(pos)-window_size/2, window_size),
+                             max(pos)-window_size/2))]
+
+#calculate average depth per window
+#wcov <- cov[, window_dp_mean := mean(count), by=window]
+wcov_new <- cov[, list(mean_window_count=mean(count)), by=window]
+
+#shift plot, so that rep origin appears near plot origin
+## can't fucking shift the plot
+wcov_new[, window := as.numeric(window)*window_size] #change to number
+#wcov_new[, position_modulus := (window+shift_over_value)%%(genome_size - shift_over_value)]
+
+#calculate coverage depth as a factor relative to the mean depth
+wcov_new[, dp_rel_mean := mean_window_count/mean(mean_window_count)]
+wcov_new[, dp_rel_median := mean_window_count/median(mean_window_count)]
+# plot coverage at windows
+#wcov <- wcov[count > 1000]
+```
+
+```{r before_coverage_plot}
+#plotting absolute, dots
+before_cov_plot_dots <- ggplot(wcov_new) + 
+  geom_jitter(aes(y=mean_window_count, x=window, alpha = 0.001)) +
+  #geom_freqpoly(stat = "identity", aes(y=dp_rel_median, x=window, alpha = 0.001)) +
+  theme_bw() +
+  labs( y = "Coverage Depth (Unique sequences)") + 
+  theme(
+    strip.background=element_blank(), #strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x = element_blank(), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none') #+
+    #annotate("text",
+    #         x = (ori_pos+shift_over_value)%%(genome_size - shift_over_value),
+    #         y = -10, label = "O") + #annotate ori, adjusted
+    #annotate("text",
+    #         x = (ter_pos+shift_over_value)%%(genome_size - shift_over_value),
+    #         y = -10, label = "X") + 
+  #coord_polar()#annotate ter, adjusted
+  #facet_wrap(~variable, scales='free') +
+  #ggtitle(samplenum)
+ #axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")
+
+#plotting absolute
+before_cov_plot_absolute <- ggplot(wcov_new) + 
+  #geom_jitter(aes(y=mean_count, x=window, alpha = 0.001)) +
+  geom_freqpoly(stat = "identity", aes(y=mean_window_count, x=window, alpha = 0.001)) +
+  theme_bw() +
+  labs( y = "Coverage Depth (Unique sequences)") + 
+  theme(
+    strip.background=element_blank(), #strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x = element_blank(), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none') +
+    annotate("text",
+             x = (ori_pos),
+             y = -10, label = "O") + #annotate ori, adjusted
+    annotate("text",
+             x = (ter_pos),
+             y = -10, label = "X")
+
+#plot the circular version:
+before_cov_plot_absolute_polar <- ggplot(wcov_new) + 
+  #geom_jitter(aes(y=mean_count, x=window, alpha = 0.001)) +
+  geom_freqpoly(stat = "identity", aes(y=log(mean_window_count + 10), x=window, alpha = 0.001)) +
+  theme_bw() +
+  labs( y = "Coverage Depth (Unique sequences)") + 
+  theme(
+    strip.background=element_blank(), #strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x = element_blank(), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none') + 
+  coord_polar()
+
+#annotate, the modulus shifted version  
+    #annotate("text",
+    #         x = (ori_pos+shift_over_value)%%(genome_size - shift_over_value),
+    #         y = -10, label = "O") + #annotate ori, adjusted
+    #annotate("text",
+    #         x = (ter_pos+shift_over_value)%%(genome_size - shift_over_value),
+    #         y = -10, label = "X")#+ 
+  #coord_polar()#annotate ter, adjusted
+  #facet_wrap(~variable, scales='free') +
+  #ggtitle(samplenum)
+ #axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")
+
+
+#before_cov_plot_absolute
+
+#plot both in grid
+grid.arrange(
+  grobs = list(before_cov_plot_dots, before_cov_plot_absolute, before_cov_plot_absolute_polar),
+  #widths = c(2, 1, 1),
+  layout_matrix = rbind(c(1, 1, 3, 3),
+                        c(2, 2, 3, 3))
+)
+
+```
+
+
+###these are the hits, ori and ter annotated with O and X
 ```{r plot_relative_depth_of_snps}
 
 test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
@@ -67,6 +188,7 @@ after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, co
     theme(text = element_text(size=fig_font_size)) +
     labs( y = "Coverage Depth (Percent of SNPs observed)",
           x = "Genomic Position (bp)") +
+    scale_y_continuous(breaks = c(0, 10, 20, 30, 40, 50)) +
     theme(
       strip.background=element_blank(), strip.placement='outside',
       strip.text=element_text(color='black'), 
@@ -79,34 +201,20 @@ after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, co
     annotate("text", x = 3900000, y = -.01, label = "O") + #annotate ori
     annotate("text", x = 1700000, y = -.01, label = "X") #annotate ter
 
-after_coverage_plot
-```
+#shifted version with modulus
+after_shifted = test_file_trimmed_dt[, position_modulus := (POSITION+shift_over_value)%%(genome_size - shift_over_value)]
 
-#test version with modulus of x
-```{r plot_relative_depth_of_snps}
-#test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
-#                                        "REF", "ALT",
-#                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
-#                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
-##                                        "INFO_EFF_AA","INFO_EFF_GT",
-#                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")]#
-
-test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
-
-#shift plot, so that rep origin appears near plot origin
-test_file_trimmed_dt[, position_modulus := (POSITION+shift_over_value)%%(genome_size - shift_over_value)]
-
-# this is still in progress...
-after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
-    geom_freqpoly(stat = "identity", size = 1, alpha = 1) + #position = position_dodge(width = 2),
-    geom_jitter(size = 1) +
+after_coverage_plot_shifted <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    geom_freqpoly(stat = "identity", size = 1, alpha = 0.5) + #position = position_dodge(width = 2),
+    geom_jitter(size = 1, alpha = 0.5) +
     theme_bw() +
     theme(text = element_text(size=18)) +
     facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
     theme_minimal() +
     theme(text = element_text(size=fig_font_size)) +
     labs( y = "Coverage Depth (Percent of SNPs observed)",
-          x = "Genomic Position (bp) MODULUS") +
+          x = "Genomic Position (bp)") +
+    scale_y_continuous(breaks = c(0, 10, 20, 30, 40, 50)) +
     theme(
       strip.background=element_blank(), strip.placement='outside',
       strip.text=element_text(color='black'), 
@@ -116,67 +224,141 @@ after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=re
       panel.grid.minor.y=element_blank(),
       axis.line=element_line(),
       legend.position = 'none') +
-    annotate("text",
-             x = (ori_pos+shift_over_value)%%(genome_size - shift_over_value),
-             y = -.01, label = "O") + #annotate ori, adjusted
-    annotate("text",
-             x = (ter_pos+shift_over_value)%%(genome_size - shift_over_value),
-             y = -.01, label = "X") #annotate ter, adjusted
+    annotate("text", x = (3900000+shift_over_value)%%(genome_size - shift_over_value), y = -.01, label = "O") + #annotate ori
+    annotate("text", x = (1700000+shift_over_value)%%(genome_size - shift_over_value), y = -.01, label = "X") #annotate ter
 
+#plot both in grid
+grid.arrange(
+  grobs = list(after_coverage_plot, after_coverage_plot_shifted),
+  #widths = c(2, 1, 1),
+  layout_matrix = rbind(c(1, 1),
+                        c(2, 2))
+)
+
+
+#after_coverage_plot
+```
+
+#test version with relative position
+```{r calc_relative_depth_of_snps}
+test_file_trimmed_dt[, dp_rel_sum := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, dp_rel_mean := DP/mean(DP), by='EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, dp_rel_median := DP/median(DP), by='EXPERIMENT_SAMPLE_LABEL']
+
+#test_file_trimmed_dt[, rel_enrichment_dp := DP/mean(DP), by='EXPERIMENT_SAMPLE_LABEL']
+#test_file_trimmed_dt[, dp_rel_mean_log := log(dp_rel_mean)]
+#add a differing "bump" so that logged values are in different positions on the x
+#test_file_trimmed_dt_with_offset = test_file_trimmed_dt[ EXPERIMENT_SAMPLE_LABEL == "291_303", offset := 29]
+#test_file_trimmed_dt_with_offset[ EXPERIMENT_SAMPLE_LABEL == "292_304", offset := 30]
+
+#test_file_trimmed_dt_with_offset[, rel_enrichment_dp_log_offset := dp_rel_mean_log + offset]
+#test_file_trimmed_dt_with_offset[, dp_rel_mean_offset := dp_rel_mean + offset]
+
+```
+
+
+#idea one:
+### plot in normal XY, with coverage before on same plot
+```{r plot_rel_depths}
+
+# this is still in progress...
+after_coverage_plot <- ggplot() +
+    #data for "after"
+    geom_bar(data = test_file_trimmed_dt_with_offset,
+                  aes(x=POSITION, y=dp_rel_mean, color=EXPERIMENT_SAMPLE_LABEL),
+                  stat = "identity", size = 1, alpha = 1) +
+    #geom_point(size = 2) +
+  #data for "before"
+    #geom_freqpoly(data = wcov_new, stat = "identity",
+    #          aes(y=dp_rel_mean, x=window, color = "gray30")) +
+    geom_freqpoly(data = wcov_new, stat = "identity",
+              aes(y=dp_rel_mean, x=window, color = "gray30")) +
+    
+    theme(text = element_text(size=18)) +
+    theme_minimal() +
+    labs( y = "Coverage Depth (relative)",
+          x = "Genomic Position (Mbp)") +
+    scale_y_continuous(#breaks = c(20, 30, 40, 50, 60, 70, 80), 
+                       #labels = c(0, 10, 20, 30, 40, 50, 60), 
+                       trans = log2_trans()) + #, #imposing offset of 20, because 20 was added to data to make the chart hollow
+                       #limits = c(0, 77)) +
+    scale_x_continuous(breaks = c(1E6, 2E6, 3E6, 4E6, genome_size), #having issues marking zero
+                       labels = c("1", "2", "3", "4", "0")) +
+    theme(
+      strip.background=element_blank(), strip.placement='outside',
+      strip.text=element_text(color='black'), 
+      axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+      panel.border=element_blank(),
+      panel.grid.minor.x=element_blank(),
+      panel.grid.minor.y=element_blank(),
+      axis.line=element_line()) #+#,
+      #legend.position = 'none') +
+    #coord_polar()
 
 after_coverage_plot
 ```
 
+#idea two:
+### plot in polar coordinates
+```{r plot_all_polar}
+# this is still in progress...
 
-```{r before_coverage_plot}
+#average replicates for the polar plot
 
-samplenum = 's4'
-depthspath <- "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/bwa_sam_bam_depths/"
-path_cov <- paste(depthspath,samplenum, "_depths", sep = "")
-cov <- fread(path_cov)
-names(cov) <- c('chr','pos','count')
+test_file_trimmed_dt_with_offset[, mean_dp_rel_sum := mean(dp_rel_sum), by = UID]
+ 
 
-#slice into windows, label window with middle base of window
-window_size <- 100
-cov[, window := cut(pos,
-                    breaks=c(seq(0, max(pos), window_size),
-                             max(pos)),
-                    labels=c(seq(window_size/2, max(pos)-window_size/2, window_size),
-                             max(pos)-window_size/2))]
+all_polar_plot <- ggplot() +
+    #geom_point(size = 2) +
+  #data for "before"
+    #geom_freqpoly(data = wcov_new, stat = "identity",
+    #          aes(y=dp_rel_mean, x=window, color = "gray30")) +
+    
+  #data for "before"
+  geom_freqpoly(data = wcov_new, stat = "identity",
+              aes(y=mean_window_count/150 + 0.9 , x=window, color = "Library coverage, before treatment"), color='black', alpha = 0.4) +
+  
+  #data for "after"
+  geom_freqpoly(data = test_file_trimmed_dt_with_offset,
+                  aes(x=POSITION, y=mean_dp_rel_sum + 1,
+                      color=EXPERIMENT_SAMPLE_LABEL),
+                  stat = "identity", size = 1, color = "#E69F00") +
+#  #data for "after"
+#  geom_col(data = test_file_trimmed_dt_with_offset[EXPERIMENT_SAMPLE_LABEL == "292_304"],
+#                  aes(x=POSITION, y=dp_rel_sum + 1,
+#                      color=EXPERIMENT_SAMPLE_LABEL),
+#                  stat = "identity", size = 1, alpha = 0.5, color = "#56B4E9", position_nudge(y = -0.05)) +
+  
+    
+    theme(text = element_text(size=18)) +
+    theme_minimal() +
+    labs( y = "Coverage Depth (relative)",
+          x = "Genomic Position (Mbp)") +
+    scale_y_continuous(breaks = c(1, 1.2, 1.4, 1.6, 1.8, 2), 
+                       labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), 
+                       #trans = log2_trans()) + #, 
+                       limits = c(0, 2)) + #for relative values
+    scale_x_continuous(breaks = c(1E6, 2E6, 3E6, 4E6, 1), #having issues marking zero
+                       labels = c("1", "2", "3", "4", "0")) +
+    theme(
+      #strip.background=element_blank(), strip.placement='outside',
+      strip.text=element_text(color='black'), 
+      axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+      panel.border=element_blank(),
+      #panel.grid.minor.x=element_blank(),
+      panel.grid.minor.y=element_blank(),
+      axis.line=element_line()) +#+#,
+      #legend.position = 'none') +
+    coord_polar()
 
-#calculate average depth per window
-#wcov <- cov[, window_dp_mean := mean(count), by=window]
-wcov_new <- wcov[, list(mean_count=mean(count)), by=window]
+all_polar_plot
 
-#shift plot, so that rep origin appears near plot origin
-## can't fucking shift the plot
-
-wcov_new[, position_modulus := (as.numeric(window)+shift_over_value)%%(genome_size - shift_over_value)]
-
-# plot coverage at windows
-#wcov <- wcov[count > 1000]
-before_cov_plot <- ggplot(wcov_new) + 
-  geom_jitter(aes(y=mean_count, x=position_modulus, alpha = 0.001)) +
-  theme_bw() +
-  labs( y = "Coverage Depth (Unique sequences)") + 
-  theme(
-    strip.background=element_blank(), #strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    axis.title.x = element_blank(), 
-    panel.border=element_blank(),
-    axis.line=element_line(),
-    legend.position = 'none') +
-  annotate("text", x = 3900000, y = -10, label = "O") + #annotate ori
-  annotate("text", x = 1700000, y = -10, label = "X")
-  #facet_wrap(~variable, scales='free') +
-  #ggtitle(samplenum)
- #axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")
-before_cov_plot
+ggsave('polar_plot_pre.pdf', plot=all_polar_plot, width=6, height=6, units='in', dpi=300, useDingbats = FALSE)
 ```
 
-```{r plot_both}
 
-grid.arrange(before_cov_plot, after_coverage_plot, nrow = 2)
+
+```{r plot_both}
 
 
 ```
@@ -220,4 +402,44 @@ ggplot(zoomed_dt, aes(x=POSITION, y=DP)) +
     y = "Depth of coverage",
     title = "Loci conferring TMP resistance in sheared gDNA RLR")
 
+```
+
+
+#test version with shift by modulus of X
+```{r plot_relative_depth_of_snps}
+test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, rel_enrichment_dp := DP/mean(DP), by='EXPERIMENT_SAMPLE_LABEL']
+
+#shift plot, so that rep origin appears near plot origin
+test_file_trimmed_dt[, position_modulus := (POSITION+shift_over_value)%%(genome_size - shift_over_value)]
+
+# this is still in progress...
+after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=rel__enrichment_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    geom_freqpoly(stat = "identity", size = 1, alpha = 1) + #position = position_dodge(width = 2),
+    geom_jitter(size = 1) +
+    theme_bw() +
+    theme(text = element_text(size=18)) +
+    facet_wrap(EXPERIMENT_SAMPLE_LABEL~., ncol=1) +
+    theme_minimal() +
+    theme(text = element_text(size=fig_font_size)) +
+    labs( y = "Coverage Depth (Percent of SNPs observed)",
+          x = "Genomic Position (bp) MODULUS") +
+    theme(
+      strip.background=element_blank(), strip.placement='outside',
+      strip.text=element_text(color='black'), 
+      axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+      panel.border=element_blank(),
+      panel.grid.minor.x=element_blank(),
+      panel.grid.minor.y=element_blank(),
+      axis.line=element_line(),
+      legend.position = 'none') +
+    annotate("text",
+             x = (ori_pos+shift_over_value)%%(genome_size - shift_over_value),
+             y = -.01, label = "O") + #annotate ori, adjusted
+    annotate("text",
+             x = (ter_pos+shift_over_value)%%(genome_size - shift_over_value),
+             y = -.01, label = "X") #annotate ter, adjusted
+
+
+after_coverage_plot
 ```
