@@ -154,6 +154,18 @@ h7[parent == "bMS_453", genotype := "sbcB-, recJ-, mutS-"]
 #  gsub('...',expression(Delta),x)
 #}
 
+#save H7 for inclusion in figure 1B appended section
+h7_scrubbed = copy(h7)
+h7_scrubbed[, ssap := more_desc]
+h7_scrubbed[, well := Sample_Well]
+h7_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "Count",
+       "Sample_ID", "expt", "time_point", "tx", "Sample_Well",
+       "parent", "plas", "desc" , "notebook", "ref", "alt", "more_desc"):=NULL]
+
+save_as = paste(parent_folder, "h7data", sep = "/")
+saveRDS(h7_scrubbed, file = save_as)
+
+
 #change plot order of genotypes, specify statistical comparisons
 h7$genotype <- factor(h7$genotype, levels = c("WT",
                                               "sbcB-",

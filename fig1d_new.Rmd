@@ -20,6 +20,8 @@ library(ggpubr)
 parent_folder = here::here('fig_1D_new')
 ```
 
+### comparison of recombinases
+
 ```{r get data}
 #edit_data_path = '/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq/FC_04398/Unaligned_1234_PF_mm1/Data/edit_mergedbins'
 

@@ -171,14 +171,17 @@ grid.arrange(
 
 ```
 
+```{r calc_relative_depth_of_snps}
+test_file_trimmed_dt[, dp_rel_sum := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, dp_rel_mean := DP/mean(DP), by='EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, dp_rel_median := DP/median(DP), by='EXPERIMENT_SAMPLE_LABEL']
 
+```
 ###these are the hits, ori and ter annotated with O and X
 ```{r plot_relative_depth_of_snps}
 
-test_file_trimmed_dt[, rel_dp := DP/sum(DP), by='EXPERIMENT_SAMPLE_LABEL']
-
 # this is still in progress...
-after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
+after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=dp_rel_sum, color=EXPERIMENT_SAMPLE_LABEL)) + 
     geom_freqpoly(stat = "identity", size = 1, alpha = 0.5) + #position = position_dodge(width = 2),
     geom_jitter(size = 1, alpha = 0.5) +
     theme_bw() +
@@ -204,8 +207,9 @@ after_coverage_plot <- ggplot(test_file_trimmed_dt, aes(x=POSITION, y=rel_dp, co
 #shifted version with modulus
 after_shifted = test_file_trimmed_dt[, position_modulus := (POSITION+shift_over_value)%%(genome_size - shift_over_value)]
 
-after_coverage_plot_shifted <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=rel_dp, color=EXPERIMENT_SAMPLE_LABEL)) + 
-    geom_freqpoly(stat = "identity", size = 1, alpha = 0.5) + #position = position_dodge(width = 2),
+after_coverage_plot_shifted <- ggplot(test_file_trimmed_dt, aes(x=position_modulus, y=dp_rel_sum, color=EXPERIMENT_SAMPLE_LABEL)) + 
+    #geom_freqpoly(stat = "identity", size = 1, alpha = 0.5) + #position = position_dodge(width = 2),
+    geom_col(position = position_dodge(width = 2), size = 1, alpha = 0.5) + #
     geom_jitter(size = 1, alpha = 0.5) +
     theme_bw() +
     theme(text = element_text(size=18)) +
@@ -264,15 +268,16 @@ test_file_trimmed_dt[, dp_rel_median := DP/median(DP), by='EXPERIMENT_SAMPLE_LAB
 # this is still in progress...
 after_coverage_plot <- ggplot() +
     #data for "after"
-    geom_bar(data = test_file_trimmed_dt_with_offset,
-                  aes(x=POSITION, y=dp_rel_mean, color=EXPERIMENT_SAMPLE_LABEL),
+    geom_bar(data = test_file_trimmed_dt,
+                  aes(x=POSITION, y=dp_rel_median, color=EXPERIMENT_SAMPLE_LABEL),
                   stat = "identity", size = 1, alpha = 1) +
     #geom_point(size = 2) +
+  
   #data for "before"
     #geom_freqpoly(data = wcov_new, stat = "identity",
     #          aes(y=dp_rel_mean, x=window, color = "gray30")) +
     geom_freqpoly(data = wcov_new, stat = "identity",
-              aes(y=dp_rel_mean, x=window, color = "gray30")) +
+              aes(y=dp_rel_median, x=window, color = "gray30")) +
     
     theme(text = element_text(size=18)) +
     theme_minimal() +
@@ -280,7 +285,7 @@ after_coverage_plot <- ggplot() +
           x = "Genomic Position (Mbp)") +
     scale_y_continuous(#breaks = c(20, 30, 40, 50, 60, 70, 80), 
                        #labels = c(0, 10, 20, 30, 40, 50, 60), 
-                       trans = log2_trans()) + #, #imposing offset of 20, because 20 was added to data to make the chart hollow
+                       trans = log10_trans()) + #, #imposing offset of 20, because 20 was added to data to make the chart hollow
                        #limits = c(0, 77)) +
     scale_x_continuous(breaks = c(1E6, 2E6, 3E6, 4E6, genome_size), #having issues marking zero
                        labels = c("1", "2", "3", "4", "0")) +
@@ -305,8 +310,9 @@ after_coverage_plot
 
 #average replicates for the polar plot
 
-test_file_trimmed_dt_with_offset[, mean_dp_rel_sum := mean(dp_rel_sum), by = UID]
- 
+test_file_trimmed_dt[, mean_dp_rel_sum := mean(dp_rel_sum), by = UID]
+test_file_trimmed_dt[, mean_dp_rel_median := mean(dp_rel_median), by = UID]
+test_file_trimmed_dt[, mean_dp := mean(DP), by = UID]
 
 all_polar_plot <- ggplot() +
     #geom_point(size = 2) +
@@ -316,12 +322,11 @@ all_polar_plot <- ggplot() +
     
   #data for "before"
   geom_freqpoly(data = wcov_new, stat = "identity",
-              aes(y=mean_window_count/150 + 0.9 , x=window, color = "Library coverage, before treatment"), color='black', alpha = 0.4) +
+              aes(y=mean_window_count + 1 , x=window, color = "Library coverage, before treatment"), color='black', alpha = 0.4) +
   
   #data for "after"
-  geom_freqpoly(data = test_file_trimmed_dt_with_offset,
-                  aes(x=POSITION, y=mean_dp_rel_sum + 1,
-                      color=EXPERIMENT_SAMPLE_LABEL),
+  geom_freqpoly(data = test_file_trimmed_dt,
+                  aes(x=POSITION, y=mean_dp + 1),
                   stat = "identity", size = 1, color = "#E69F00") +
 #  #data for "after"
 #  geom_col(data = test_file_trimmed_dt_with_offset[EXPERIMENT_SAMPLE_LABEL == "292_304"],
@@ -334,10 +339,11 @@ all_polar_plot <- ggplot() +
     theme_minimal() +
     labs( y = "Coverage Depth (relative)",
           x = "Genomic Position (Mbp)") +
-    scale_y_continuous(breaks = c(1, 1.2, 1.4, 1.6, 1.8, 2), 
-                       labels = c(0, 0.2, 0.4, 0.6, 0.8, 1), 
+  scale_y_continuous(trans = log10_trans()) +
+    #scale_y_continuous(breaks = c(1, 1.2, 1.4, 1.6, 1.8, 2), 
+    #                   labels = c(0, 0.2, 0.4, 0.6, 0.8, 1)) + #, 
                        #trans = log2_trans()) + #, 
-                       limits = c(0, 2)) + #for relative values
+                       #limits = c(0, 2)) + #for relative values
     scale_x_continuous(breaks = c(1E6, 2E6, 3E6, 4E6, 1), #having issues marking zero
                        labels = c("1", "2", "3", "4", "0")) +
     theme(
@@ -347,13 +353,13 @@ all_polar_plot <- ggplot() +
       panel.border=element_blank(),
       #panel.grid.minor.x=element_blank(),
       panel.grid.minor.y=element_blank(),
-      axis.line=element_line()) +#+#,
+      axis.line=element_line()) #+#+#,
       #legend.position = 'none') +
-    coord_polar()
+    #coord_polar()
 
 all_polar_plot
 
-ggsave('polar_plot_pre.pdf', plot=all_polar_plot, width=6, height=6, units='in', dpi=300, useDingbats = FALSE)
+#ggsave('polar_plot_pre.pdf', plot=all_polar_plot, width=6, height=6, units='in', dpi=300, useDingbats = FALSE)
 ```
 
 
