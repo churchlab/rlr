@@ -45,11 +45,11 @@ test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
 
 ```
 
-```{r plot_1000_1500}
-ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+```{r plot_1000}
+ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"], aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
   geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
-  geom_text(vjust = 0, data = subset(test_file_trimmed_dt, DP > 1000 & EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt")) +
+  geom_text(vjust = 0, data = subset(test_file_trimmed_dt, DP > 1000 & EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt")) +
   theme(text = element_text(size=18)) #+
   #coord_polar()
   #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
@@ -64,10 +64,16 @@ ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=
 
 #8/29/2019 trying new stuff
 ```{r plot_new}
-ggplot(test_file_dt, aes(x=POSITION, y=DP, color=AF, label = INFO_EFF_GENE)) + 
-  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+
+#convert counts to relative measure of frequency
+test_file_trimmed_dt[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+test_file_trimmed_dt[, snp_freq := DP/snp_obs]
+
+ggplot(test_file_trimmed_dt, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
   theme_bw() +
-  geom_text(vjust = 0, data = subset(test_file_dt, DP > 1000 )) +
+  geom_text(vjust = 0, data = subset(test_file_trimmed_dt, snp_freq > .02 )) +
   theme(text = element_text(size=18)) + #+
   #coord_polar()
   facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') #+
@@ -189,21 +195,18 @@ dt40plus = G10_dt_trimmed[EXPERIMENT_SAMPLE_LABEL %in% c("40A", "40B")]
 dt40plus[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
 dt40plus[, snp_freq := DP/snp_obs]
 
-#remove folA snp and see what's left:
-dt40plus_filter = dt40plus[UID != "aa76968f"]
-dt40plus_filter = dt40plus_filter[snp_freq > .001]
 
-dt40plus_faves = dt40plus_filter[INFO_EFF_GENE %in% c('cstA', 'igaA', 'uvrD')]
 
-ggplot(dt40plus_filter, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+plot_40 <- ggplot(dt40plus, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
   geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
   #scale_y_continuous(trans = log10_trans() ) + #limit=c(0.0005, 8), 
                      #breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
   geom_text(vjust = 0, data = subset(dt40plus_filter, snp_freq >= .01)) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=18),
+        legend.position = 'none') +
   #coord_polar()
-  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
   #coord_polar() # +
   #geom_text_repel() +
   #labs(
@@ -211,6 +214,8 @@ ggplot(dt40plus_filter, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABE
   #  y = "Depth of coverage",
   #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
   #  color = "Sample")
+
+plot_40
 ```
 
 #38 are the samples with beta recombinase
@@ -227,15 +232,16 @@ dt38plus[, snp_freq := DP/snp_obs]
 
 #dt40plus_faves = dt40plus_filter[INFO_EFF_GENE %in% c('cstA', 'igaA', 'uvrD')]
 
-ggplot(dt38plus, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+plot_38 <- ggplot(dt38plus, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
   geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
   #scale_y_continuous(trans = log10_trans() ) + #limit=c(0.0005, 8), 
                      #breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
   geom_text(vjust = 0, data = subset(dt38plus, snp_freq >= .01)) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=18),
+        legend.position = 'none') +
   #coord_polar()
-  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
   #coord_polar() # +
   #geom_text_repel() +
   #labs(
@@ -243,4 +249,71 @@ ggplot(dt38plus, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, labe
   #  y = "Depth of coverage",
   #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
   #  color = "Sample")
+plot_38
 ```
+
+```{r}
+#plot both in grid
+grid.arrange(
+  grobs = list(plot_38, plot_40),
+  #widths = c(2, 1, 1),
+  layout_matrix = rbind(c(1, 1),
+                        c(2, 2))
+)
+```
+
+### what's in there besides fola?
+
+```{r no_folA}
+#remove folA snp and see what's left:
+dt40plus_filter = dt40plus[UID != "aa76968f"]
+#dt40plus_filter = dt40plus_filter[snp_freq > .001]
+
+plot_40_filter <- ggplot(dt40plus_filter, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+
+  geom_text(vjust = 0, data = subset(dt40plus_filter, snp_freq >= .01)) +
+  theme(text = element_text(size=18),
+        legend.position = 'none') +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
+
+
+dt38plus_filter = dt38plus[UID != "aa76968f"]
+plot_38_filter <- ggplot(dt38plus_filter, aes(x=POSITION, y=snp_freq, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(limit=c(0, .25) )+
+                     #breaks = c(.001, .01, .1, .3, 1, 3, 10, 100, 1000)) +
+  geom_text(vjust = 0, data = subset(dt38plus, snp_freq >= .01)) +
+  theme(text = element_text(size=18),
+        legend.position = 'none') +
+  #coord_polar()
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
+
+
+#plot both in grid
+grid.arrange(
+  grobs = list(plot_38_filter, plot_40_filter),
+  #widths = c(2, 1, 1),
+  layout_matrix = rbind(c(1, 1),
+                        c(2, 2))
+)
+
+
+#closer look at 40B
+ggplot(dt40plus_filter[EXPERIMENT_SAMPLE_LABEL == "40B"], aes(x=POSITION, y=snp_freq, color=INFO_EFF_EFFECT, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+  theme_bw() +
+
+  geom_text(vjust = 0, data = subset(dt40plus_filter, snp_freq >= .002)) +
+  theme(text = element_text(size=18))
+        
+        
+        legend.position = 'none') #+
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
+
+
+```
+
+
