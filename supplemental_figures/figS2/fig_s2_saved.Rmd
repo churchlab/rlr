@@ -1,0 +1,164 @@
+---
+title: "FigureS2_from_H1"
+author: "Max Schubert"
+date: "8/2/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#library(dplyr)
+
+```
+
+## Plotting of Editing experiment in notebook "H1"
+
+
+```{r read_in_data}
+
+data_dir = "/Users/Max_Schubert/dropbox_hms/active_seq_reads/5_2017_edits/5_4_2019_edits-126495366"
+analysis_dir = "/Users/Max_Schubert/Dropbox/RLR_e.coli_dropbox/NewNotebook_expts/H_rlr1_closeout/h3"
+
+#data
+edit_data_name = "h3_merge_bins_out_redo"
+edit_data_file = paste(data_dir, edit_data_name, sep = "/")
+edit_data_dt <- data.table(fread(edit_data_file))
+edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+#use Sample_ID to merge to metadata
+edit_data_melt[, Sample_ID := as.numeric(str_replace_all(Sample, "_cutcount", ""))]
+
+```
+
+```{r read_in_metadata}
+#manifest, describing the sample sequenced
+manifest_name = "edit_info.csv"
+manifest_file = paste(analysis_dir, manifest_name, sep = "/")
+manifest_dt <- data.table(fread(manifest_file))
+#make smaller version to use as metadata
+metadata = manifest_dt[, c("V1", "Sample_Plate", "adaptrset",
+                "cutadapt_edit_5prime", "cutadapt_edit_3prime",
+                "cutadapt_5prime", "cutadapt_3prime", "filename"):=NULL]
+
+
+#merge manifest to edit_data
+melt_with_annot <- edit_data_melt[metadata, on = "Sample_ID", nomatch = 0]
+melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values to make table smaller
+```
+
+# measure fraction edited
+
+```{r fraction_edited}
+
+melt_with_annot_nozero[, is_ref := (bc_read == ref)]
+melt_with_annot_nozero[, is_alt := (bc_read == alt)]
+
+#of sequences matching ref or alt, what fraction is edited
+melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_ID'][is_ref == TRUE]
+melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
+
+#save this table
+save_to = 'h3fraction_edited.rds'
+saveRDS(melt_with_fedit, file = paste(analysis_dir,save_to, sep = '/'))
+
+```
+
+```{r keep track of reads}
+
+num_reads_basespacePF = 17189890 
+num_reads_in_fastqs = sum(manifest_dt$reads) #expecting .94835 to be indexed
+
+total_counts_merged = sum(melt_with_annot_nozero$Count)
+total_counts_ref_or_alt = sum(melt_with_annot_nozero[is_ref == TRUE | is_alt == TRUE]$Count)
+
+#compare tot fastq to tot basespace, get pct indexed
+print(paste(as.character(num_reads_in_fastqs/num_reads_basespacePF*100), "% reads indexed", sep = " "))
+
+#compare counts merged to fastqs
+print(paste(as.character(total_counts_merged/num_reads_in_fastqs*100), "% reads merged", sep = " "))
+#CONFUSINGLY!!!!! the number ref or alt is HIGHER than the total reads i started with? why.
+
+
+#compare ref_alt read num to total merged
+print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of reads merged are ref or alt seqs", sep = " "))
+
+print(paste(as.character(total_counts_ref_or_alt/num_reads_in_fastqs*100), "% of reads from basespace are ref or alt... presumably", sep = " "))
+
+#hmmmm read in cutcount_reads_report
+cutcount_name = "cutcount_reads_report.csv"
+cutcount_file = paste(analysis_dir, cutcount_name, sep = "/")
+cutcount_dt <- data.table(fread(cutcount_file))
+
+num_reads_cutcounted = sum(cutcount_dt$tot_counts_cutcounted)
+#OK.... i somehow cutcount-ed 21.8M reads...
+
+```
+
+
+## ok lets visualize the controls
+```{r plot h1}
+
+
+h1 <- melt_with_fedit[expt == 'H1']
+
+
+#change plot order of genotypes
+h1$more_desc <- factor(h1$more_desc, levels = c("normal","gfp neg control",
+                                                              "dRT",
+                                                              "no beta",
+                                                              "rc",
+                                                              "rc, drt"))
+#change legend order of plasmids
+h1$desc <- factor(h1$desc, levels = c())
+my_comparisons <- list( c("WT", "∆mutS"), c("∆mutS", "∆mutS, ∆sbcB"),
+                        c("∆mutS, ∆sbcB","∆mutS, ∆recJ"), c("∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB") )
+x_labels <- addline_format(c("Full, Construct",
+                             "GFP, negative, control",
+                             "dRT, control",
+                             "no SSAP, control",
+                             "reverse-, complement, control",
+                             "reverse-, complement, and dRT, control"))
+
+#make summary data.table for summary stats
+h1summary <- h1[, 
+                            list(
+                              Count = Count,
+                              N= .N,
+                              mean= mean(fraction_edited),
+                              sd= sd(fraction_edited),
+                              se= sd(fraction_edited) / sqrt(.N)),
+                            by=c("more_desc")]
+
+
+ggplot(h1, aes(x=more_desc, y=fraction_edited, color=more_desc)) + 
+  geom_jitter(width = 0.1, height = 0.1, size = 3) +
+  theme_bw() +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  theme(legend.position = "none") +
+  scale_y_continuous(breaks = c(.00001, .0001, .001, .01, .1, .25, .5), 
+                     trans = log10_trans() ) +
+                     #labels = scales::scientific) +
+  theme(text = element_text(size=18)) +
+  labs(
+    x = "Condition",
+    y = "Fraction Edited") + #,
+    #title = "",
+    #color = NULL) + 
+  #scale_fill_discrete(labels = c("A", "B", "C"))# Add pairwise comparisons p-value
+  #stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif") +
+  scale_x_discrete(labels = x_labels)
+
+#ggplotly()
+
+```

@@ -1,0 +1,308 @@
+---
+title: "Fig1C"
+author: "Max Schubert"
+date: "6/18/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+params:
+  encoding: UTF-8
+  warning: FALSE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+pdf.options(encoding = "CP1250")
+
+library(data.table)
+library(stringr)
+library(plyr)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(here)
+library(ggpubr)
+
+
+parent_folder <- here::here()
+source(here::here('constants.R'))
+
+```
+
+```{r define_functions}
+#general functions for string manipulation and plotting
+scientific_10 <- function(x) {
+  parse(text=gsub("e", " %*% 10^", scales::scientific_format()(x)))
+}
+make_percent <- function(x){
+  paste(100*x, "%", sep="")
+}
+
+#to make Xlabels have multiple lines, instead of comma and space:
+addline_format <- function(x,...){
+  gsub(', ','\n',x)
+}
+
+
+```
+
+
+
+# fig1B, editing across genotypes
+
+```{r fig1_load_data_and_metadata}
+#from b22 analysis
+fig1b_dir = "fig_1b"
+current_folder <- paste(parent_folder, fig1b_dir, sep = '/')
+
+#read in data
+edit_data_file = paste(current_folder,"b18b19b23_edit_mergedbins", sep = "/")
+edit_data_dt <- data.table(fread(edit_data_file))
+edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+#make new col Sample_num for merging to manifest
+edit_data_melt[, Sample_num := as.numeric(str_replace_all(Sample, "_cutcount", ""))]
+
+#import manifest
+#this contains the data "expt_set" and "tx" for annotating metadata!
+manifest_file = paste(current_folder, "FC_04592_1234_PF_mm1_mschubert_manifest_edited.csv", sep = "/")
+manifest_dt <- data.table(fread(manifest_file)) 
+#kill a ton of these columns
+manifest_dt = Filter(function(x)!all(is.na(x)), manifest_dt) #kills columns with all NA
+manifest_dt = manifest_dt[,c('Sample_num','expt_set','well_indexed','tx','editing_timepoint', 'control_status')] #keeps only specified columns
+
+#merge manifest to edit_data
+melt_with_annot <- edit_data_melt[manifest_dt, on = "Sample_num", nomatch = 0]
+
+#import metadata, merge 
+tx_deets_file = paste(current_folder, 'edit_tx_map.csv', sep = "/")
+tx_deets = data.table(fread(tx_deets_file)) 
+melt_with_metadata <- melt_with_annot[tx_deets, on = c("expt_set","tx"), nomatch = 0]
+
+#import ref_alt, merge
+ref_alt_file = paste(current_folder, 'ref_alt_map.csv', sep = "/")
+ref_alt = data.table(fread(ref_alt_file)) 
+melt_with_metadata2 <- melt_with_metadata[ref_alt, on = "adapters", nomatch = 0]
+
+```
+
+```{r fig1be_ref_alt}
+#establishes control sample and normalizes to this, prints into "ratio", kill singletons
+melt_with_metadata2[, is_ref := (bc_read == ref)]
+melt_with_metadata2[, is_alt := (bc_read == alt)]
+
+melt_with_fedit <- melt_with_metadata2[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_num'][is_ref == TRUE]
+
+```
+
+
+### get data from "H7" experiment in supp fig S3A for inclusion here
+```{r get_h7_data}
+h7_scrubbed = readRDS(file = "h7data")
+h7_triple <- h7_scrubbed[genotype == "sbcB-, recJ-, mutS-" ]
+h7_triple$genotype = "∆mutS, ∆recJ, ∆sbcB, +PF020"
+
+#also scrub b22 data
+b22 <- melt_with_fedit[expt_set == 'b22']
+b22[control_status != 'background']
+b22_scrubbed <- copy(b22)
+b22_scrubbed[, well := well_indexed]
+b22_scrubbed[, ssap := "Beta"]
+b22_scrubbed[, genotype := strain_genotype]
+b22_scrubbed[, locus := adapters]
+b22_scrubbed = b22_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "Count",
+                       "Sample_num", "expt_set", "well_indexed", "tx", "editing_timepoint",
+                       "control_status", "parent", "strain_genotype", "plas", "adapters", "comment",
+                       "plas_desc", "ref", "alt", "is_ref", "is_alt") := NULL]
+
+genotype_rbind = rbind(h7_triple, b22_scrubbed)
+
+```
+
+
+## Fig 1B (this version with h7 appended, to include +PF020 data)
+
+```{r fig1B_plot}
+
+#change plot order of genotypes, specify statistical comparisons
+genotype_rbind$genotype <- factor(genotype_rbind$genotype,
+                                  levels = c("WT","∆mutS",
+                                             "∆mutS, ∆sbcB",
+                                             "∆mutS, ∆recJ",
+                                             "∆mutS, ∆recJ, ∆sbcB",
+                                             "∆mutS, ∆recJ, ∆sbcB, +PF020"))
+
+my_comparisons <- list( c("WT", "∆mutS"), c("∆mutS", "∆mutS, ∆sbcB"),
+                        c("∆mutS, ∆sbcB","∆mutS, ∆recJ"),
+                        c("∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"),
+                        c("∆mutS, ∆recJ, ∆sbcB", "∆mutS, ∆recJ, ∆sbcB, +PF020"))
+
+x_labels <- addline_format(c("WT", "∆ mutS", "∆ mutS, ∆ sbcB", "∆ mutS, ∆ recJ", "∆ mutS, ∆ recJ, ∆ sbcB", "∆ mutS, ∆ recJ, ∆ sbcB, +PF020"))
+
+y_breaks <- c(.00001, .0001, .001, .01, .1, .5, 1)
+
+fig1b_plus <- ggplot(genotype_rbind, aes(x=genotype, y=fraction_edited, color=locus)) + 
+  geom_jitter(width = 0.1, height = 0.1, size = 2, alpha = 0.7, stroke = 0) +
+  scale_y_continuous(breaks = y_breaks,
+                     label=c(scientific_10(y_breaks[1:3]), make_percent(y_breaks[4:7])), 
+                     trans = log10_trans()) +
+  theme(text = element_text(size=10)) +
+  labs(
+    x = "Genotype",
+    y = "Fraction Edited",
+    color = "Locus") + # Add pairwise comparisons p-value
+  stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif", label.y = c(-1.5, -1.0,
+                                                                                                      -0.5, 0,
+                                                                                                      0.5)) +
+  scale_x_discrete(labels = addline_format(x_labels)) +
+  theme_linedraw() +
+  theme(
+    text = element_text(size=fig_font_size),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+    legend.position = c(0.2, 0.95),
+    legend.title = element_blank(),
+    legend.box = "horizontal",
+    legend.direction = "horizontal")
+
+fig1b_plus
+
+fig_width=figure_width*2/3
+fig_height_ratio=2/3
+
+ggsave(here::here('fig1b_plus.pdf'), plot=fig1b_plus, width=fig_width, 
+       height=fig_height_ratio*fig_width, units='in', dpi=300, device = cairo_pdf)
+```
+
+# fig1c
+
+```{r 1c_get_data}
+#this is the file with minimum counts 20
+mergebinpath <- here::here("fig_1c","ev1_edit_merged_bins")
+merged_bins.dt <- data.table(fread(mergebinpath))
+mergemelt.dt <- melt(merged_bins.dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+
+mergemelt.dt[, sample_ID := str_replace_all(Sample, "_cutcount", "")]
+
+#import library annotations, trim some extraneous columns, trim some extraneous rows
+liblistpath <- here::here("fig_1d","lib_list.csv")
+liblistdt <- data.table(fread(liblistpath))
+
+liblistdt[, c("id",
+              "column",
+              "row"):=NULL]
+
+annotated_megatable <- liblistdt[mergemelt.dt, on = "sample_ID", nomatch = 0]
+
+
+#read in edit seqs (ref, alt)
+refaltpath <- here::here("fig_1d","adapters_map.csv")
+refalt_dt <- data.table(fread(refaltpath))
+
+refalt_dt[, c("5prime_cutadapt",
+              "3prime_cutadapt",
+              "5prime_edit",
+              "3prime_edit"):=NULL]
+#merge ref and alt to table
+#for now, using expt_set, though in the future something more complex should be used
+seq_annotated_megatable <- annotated_megatable[refalt_dt, on = "expt_set", nomatch = 0]
+
+```
+
+```{r 1c_calc_editing}
+#establishes control sample and normalizes to this, prints into "ratio", kill singletons
+seq_annotated_megatable[, is_ref := (bc_read == ref)]
+seq_annotated_megatable[, is_alt := (bc_read == alt)]
+
+edited_frac <- seq_annotated_megatable[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample'][is_ref == TRUE]
+
+```
+
+```{r 1c_plot_with_hours}
+######
+currenttable = edited_frac[expt_set == "ev_gyr"] #set experiment to view
+
+#load table of timepoint ~ hours, merge hours to current table
+hours_path <- here::here('fig_1d',"timepoint_hours.csv")
+hours.dt <- data.table(fread(hours_path))
+current_table_hours <- currenttable[hours.dt, on = "timepoint", nomatch = 0]
+
+#define means
+summary <- current_table_hours[,
+                        list(
+                          Count = Count,
+                          N= .N,
+                          fraction_edited= mean(fraction_edited),
+                          sd= sd(fraction_edited),
+                          se= sd(fraction_edited) / sqrt(.N)),
+                        by=c("timepoint", "hours")]
+
+#hline
+horiz_val <- current_table_hours[hours >= 49, mean(fraction_edited)]
+horiz_txt <- paste0(format(horiz_val*100, digits=2), '% edited')
+
+#plot, tall skinny version for figure 1
+fig1c <- ggplot(current_table_hours, aes(x=hours, y=fraction_edited, color = "#F8766D")) + 
+  #geom_errorbar(data = summary, aes(ymin=fraction_edited-se, ymax=fraction_edited+se, alpha = .3), width=.1) +
+  geom_line(data = summary, aes(x = hours, y= fraction_edited, alpha = .3)) +
+  geom_jitter(width = 0.5,  size = 3) +
+  scale_y_continuous(breaks = c(.00, .25, .5, .75, 1), labels=scales::percent) +
+  labs(
+    x = "Time (Hours)",
+    y = "Percent Edited") +
+  geom_hline(yintercept=horiz_val, linetype=2) +
+  annotate(geom='text', y=horiz_val, x=10, label=horiz_txt, vjust=-0.5, hjust=0, size=fig_font_size*0.3) +
+  theme_linedraw() +
+  theme(
+    text = element_text(size=fig_font_size),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+    legend.position = 'none') 
+
+fig1c
+  
+
+ggsave(here::here('fig1c.pdf'),
+  plot=fig1c, width=3, height=3, units='in',
+  dpi=300, useDingbats = FALSE)
+
+```
+
+
+### planning to delete all below for cleanup
+
+
+```{r fig1bc}
+
+fig1b_comb <- fig1b_plus + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
+fig1c_comb <- fig1c + labs(y='') + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
+grid.newpage()
+fig1bc <- plot_grid(
+  plotlist=list(fig1b_comb, fig1c_comb),
+  align = 'hv',
+  axis='tblr',
+  rel_widths = c(2.5,1))
+
+fig1bc
+
+ggsave(here::here('fig1bc.pdf'),
+       plot=fig1bc, width=7.5,
+       height=3, units='in', dpi=300,
+       device = cairo_pdf)
+```
+
+
