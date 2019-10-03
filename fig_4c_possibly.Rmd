@@ -104,44 +104,66 @@ ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=
   #  color = "Sample")
 ```
 
-```{r zoom_plot}
-#for zoom in on folA locus
-zoomed_dt = test_file_trimmed_dt[POSITION < 60000]
-zoomed_dt = subset(zoomed_dt, EXPERIMENT_SAMPLE_LABEL = "291_303")
+#############
+### use libraries before treatment with TMP as a "before" or "untreated" sample to determine FDR of SNPs for TMP1000 experiment
 
+```{r get_before_data}
+before38_table = "38A_38B_before.csv"
+before40_table = "40A_40B_before.csv"
 
-ggplot(zoomed_dt, aes(x=POSITION, y=DP)) + 
-  geom_col(position = position_dodge(width = 0.9), fill = "#FF6666", size =2 ) +
-  theme_bw() +
-  scale_y_continuous(trans = log10_trans()) +
-  theme(text = element_text(size=24)) +
-  theme_bw() +
-  labs(
-    x = "Mutations, shown at their position on the chromosome",
-    y = "Depth of coverage",
-    title = "Loci conferring TMP resistance in sheared gDNA RLR")
+before38_path = paste(parent_folder, before38_table, sep = "/")
+before40_path = paste(parent_folder, before40_table, sep = "/")
+before38_dt = data.table(fread(before38_path))
+before40_dt = data.table(fread(before40_path))
 
-#optional, to inspect plot
-#ggplotly()
+#ditch columns with all NA
+before38_dt = Filter(function(x)!all(is.na(x)), before38_dt)
+before40_dt = Filter(function(x)!all(is.na(x)), before40_dt)
 
-
-#version that is less zoomed
-zoomed_dt = test_file_trimmed_dt[POSITION < 1000000]
-zoomed_dt = subset(zoomed_dt, EXPERIMENT_SAMPLE_LABEL = "291_303")
-
-
-ggplot(zoomed_dt, aes(x=POSITION, y=DP)) + 
-  geom_col(position = position_dodge(width = 0.9), fill = "#FF6666", size = 100) +
-  theme_bw() +
-  scale_y_continuous(trans = log10_trans()) +
-  theme(text = element_text(size=24)) +
-  theme_bw() +
-  labs(
-    x = "Mutations, shown at their position on the chromosome",
-    y = "Depth of coverage",
-    title = "Loci conferring TMP resistance in sheared gDNA RLR")
+#append both into one table
+before_all_dt = rbind(before38_dt, before40_dt)
 
 ```
+
+```{r plot_before_data_38}
+
+before_sample = c("38A_induced", "38B_induced")
+before_into_plot = before_all_dt[EXPERIMENT_SAMPLE_LABEL %in% before_sample]
+
+#convert counts to relative measure of frequency
+before_into_plot[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+before_into_plot[, snp_freq := DP/snp_obs]
+
+ggplot(before_into_plot, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(before_into_plot, snp_freq > .02 )) +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL)
+
+```
+
+```{r plot_before_data_40}
+
+before_sample = c("40A_induced", "40B_induced")
+before_into_plot = before_all_dt[EXPERIMENT_SAMPLE_LABEL %in% before_sample]
+
+#convert counts to relative measure of frequency
+before_into_plot[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+before_into_plot[, snp_freq := DP/snp_obs]
+
+ggplot(before_into_plot, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(before_into_plot, snp_freq > .02 )) +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL)
+
+```
+
+
 
 
 #############
@@ -314,6 +336,27 @@ ggplot(dt40plus_filter[EXPERIMENT_SAMPLE_LABEL == "40B"], aes(x=POSITION, y=snp_
   facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=1, ncol=2)
 
 
+```
+
+
+###### cutadapt-ed data found
+
+```{r cutadapt_data}
+cutadapt_table = "t1000_t1500_cutadapt_what.csv"
+
+cutadapt_path = paste(parent_folder, cutadapt_table, sep = "/")
+cutadapt_file_dt = data.table(fread(cutadapt_path))
+cutadapt_file_dt = Filter(function(x)!all(is.na(x)), test_file_dt) #kills columns with all NA
+```
+```{r plot_cutadapt}
+ggplot(cutadapt_file_dt, aes(x=POSITION, y=DP, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(cutadapt_file_dt, DP > 1000 )) +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y')
+  
 ```
 
 
