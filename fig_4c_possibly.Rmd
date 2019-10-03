@@ -163,6 +163,33 @@ ggplot(before_into_plot, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
 
 ```
 
+############
+## try liquid selection data
+
+```{r load_liquid_data}
+liquid_table = "e1e2e3e4_liquid_TMP800.csv"
+liquid_path = paste(parent_folder, liquid_table, sep = "/")
+liquid_dt = data.table(fread(liquid_path))
+
+#ditch columns with all NA
+liquid_dt = Filter(function(x)!all(is.na(x)), liquid_dt)
+```
+
+```{r plot_liquid_data}
+
+#convert counts to relative measure of frequency
+liquid_dt[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+liquid_dt[, snp_freq := DP/snp_obs]
+
+ggplot(liquid_dt, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(liquid_dt, snp_freq > .02 )) +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~EXPERIMENT_SAMPLE_LABEL)
+
+```
 
 
 
