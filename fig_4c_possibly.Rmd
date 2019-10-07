@@ -163,6 +163,36 @@ ggplot(before_into_plot, aes(x=POSITION, y=snp_freq, label = INFO_EFF_GENE)) +
 
 ```
 
+
+###########
+## input genomic sequencing data
+
+```{r get_data_genomes}
+table_488489 = "488_489_variants.csv"
+path_488489 = paste(parent_folder, table_488489, sep = "/")
+dt_488489 = data.table(fread(path_488489))
+dt_488489 = Filter(function(x)!all(is.na(x)), dt_488489) #ditch columns with all NA
+```
+```{r plot_genome_SNPs}
+#before_sample = c("40A_induced", "40B_induced")
+#before_into_plot = before_all_dt[EXPERIMENT_SAMPLE_LABEL %in% before_sample]
+#convert counts to relative measure of frequency
+#before_into_plot[, snp_obs := sum(DP), by= 'EXPERIMENT_SAMPLE_LABEL']
+#before_into_plot[, snp_freq := DP/snp_obs]
+
+ggplot(dt_488489[EXPERIMENT_SAMPLE_LABEL == 488], aes(x=POSITION, y=DP, label = INFO_EFF_GENE)) +
+  geom_point(size = 2, alpha = 0.5) +
+  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = 0, data = subset(dt_488489, DP > 100 )) +
+  theme(text = element_text(size=18)) 
+
+```
+
+
+
+
+
 ############
 ## try liquid selection data
 
