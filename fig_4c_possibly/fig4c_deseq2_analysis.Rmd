@@ -1,0 +1,124 @@
+--
+title: "Fig_4c_deseq_analysis"
+author: "dbg"
+date: "6/18/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+#library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+library(ggrepel)
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+library(DEseq2)
+
+parent_folder = here::here('fig_4c_possibly')
+
+```
+
+```{r get data}
+#can update when i get the new stuff
+test_table = "variants_fromT1000T1500.csv"
+before38_table = "38A_38B_before.csv"
+before40_table = "40A_40B_before.csv"
+
+rows_to_keep = c( "UID", "POSITION", "REF", "ALT",
+  "EXPERIMENT_SAMPLE_LABEL", "DP",
+  "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+  "INFO_EFF_AA","INFO_EFF_GT",
+  "INFO_EFF_CLASS", "INFO_EFF_GENE")
+
+before38_path = paste(parent_folder, before38_table, sep = "/")
+before40_path = paste(parent_folder, before40_table, sep = "/")
+test_path = paste(parent_folder, test_table, sep = "/")
+
+before38_dt = data.table(fread(before38_path))
+before40_dt = data.table(fread(before40_path))
+test_file_dt = data.table(fread(test_path))
+
+combined_dt = rbind(before38_dt[, ], before40_dt, test_file_dt)
+
+# remove NAs
+combined_dt = Filter(function(x)!all(is.na(x)), combined_dt)
+
+#keep only specified columns
+combined_dt = combined_dt[, rows_to_keep, with=F]
+combined_dt[, n_samples := .N, by=POSITION]
+combined_dt[, n_pos := sum(EXPERIMENT_SAMPLE_LABEL %in% pos_experiments), by='POSITION']
+combined_dt[, n_neg := sum(EXPERIMENT_SAMPLE_LABEL %in% neg_experiments), by='POSITION']
+```
+
+```{r}
+
+pos_experiments = c('T1500_cutadapt','T1000_cutadapt')
+neg_experiments = c("40A_induced", "40B_induced", "38A_induced", "38B_induced")
+
+n_sample_summ_dt <- combined_dt[
+  n_samples > 1, list(
+    n_samples[1], mean_dp= mean(log10(DP)), 
+    sd_dp=sd(log10(DP)), n_pos=n_pos[1], 
+    n_neg=n_neg[1], gene=INFO_EFF_GENE[1]), 
+  by='POSITION']
+
+ggplot(n_sample_summ_dt,
+    aes(x=n_samples, y=mean_dp, color=factor(n_neg), group=POSITION)) +
+  geom_point(position=position_dodge(0.4)) + 
+  geom_linerange(aes(ymin=mean_dp-sd_dp, ymax=mean_dp+sd_dp), position=position_dodge(0.4)) + 
+  geom_text_repel(aes(label=gene), position=position_dodge(0.4), size=3) + 
+  labs(
+    x='Number of Samples SNP occurs in',
+    color='Number of Samples\nthat are Negative',
+    y='Log10 Mean Depth (+/- 1xlog10 SD)')
+```
+
+```{r}
+
+cts <- dcast(combined_dt, POSITION ~ EXPERIMENT_SAMPLE_LABEL, value.var='DP', fill=0)
+rownames(cts) <- cts[, POSITION]
+
+coldata <- data.table(matrix(c(rep('neg', 4), rep('pos', 2))))
+names(coldata) <- 'condition'
+
+rownames(coldata) <- names(cts)[2:length(names(cts))]
+
+dds <- DESeqDataSetFromMatrix(countData = cts[, 2:length(names(cts)), with=F],
+                              colData = coldata,
+                              design= ~ condition)
+dds <- DESeq(dds)
+res <- results(dds, name="condition_pos_vs_neg")
+res <- lfcShrink(dds, coef="condition_pos_vs_neg", type="apeglm")
+res <- data.table(as.data.frame(res))
+res[, POSITION := as.numeric(rownames(cts))]
+
+res_combined_dt <- combined_dt[res, on='POSITION']
+
+reduced_dt <- unique(res_combined_dt[, 
+    list(gene=INFO_EFF_GENE, n_pos, n_neg, POSITION, pvalue, padj, log2FoldChange)])
+
+# shared position jitter
+pos <- position_jitter(width = 0.5, seed = 100)
+
+ggplot(reduced_dt, aes(x=factor(n_pos), y=factor(n_neg))) + 
+  geom_point(shape = 21, aes(size=-log10(pvalue), fill=pmax(-0.5, pmin(log2FoldChange, 0.5))), position=pos, color='black') + 
+  scale_fill_distiller(palette='BrBG', limits=c(-0.5,0.5)) + 
+  geom_text(data=reduced_dt, aes(label=gene, alpha=(n_pos == 2)), position=pos, size=3, hjust=0.5, vjust=1) + 
+  scale_alpha_manual(values=c(0,1)) + 
+  geom_tile(color='grey', fill=NA) + 
+  theme_minimal() +
+  labs(x='Number of Positive Samples', y='Number of Negative Samples', color='est. log2 Fold Change')
+
