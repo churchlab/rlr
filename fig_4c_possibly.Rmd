@@ -104,10 +104,15 @@ ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1500_cutadapt"], aes(x=
   #  color = "Sample")
 ```
 
+
+###########
+get data from plasmid libraries to use as a "before" sample for deseq2 analysis
+
+
 #############
 ### use libraries before treatment with TMP as a "before" or "untreated" sample to determine FDR of SNPs for TMP1000 experiment
 
-```{r get_before_data}
+```{r get_before_data_38AB_40AB}
 before38_table = "38A_38B_before.csv"
 before40_table = "40A_40B_before.csv"
 

@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 --
 title: "Fig_4c_deseq_analysis"
 author: "dbg"
@@ -25,17 +30,20 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("DESeq2")
-library(DEseq2)
+library(DESeq2)
 
 parent_folder = here::here('fig_4c_possibly')
 
 ```
+
+##
 
 ```{r get data}
 #can update when i get the new stuff
 test_table = "variants_fromT1000T1500.csv"
 before38_table = "38A_38B_before.csv"
 before40_table = "40A_40B_before.csv"
+s1_9_table = "s_1_9.csv"
 
 rows_to_keep = c( "UID", "POSITION", "REF", "ALT",
   "EXPERIMENT_SAMPLE_LABEL", "DP",
@@ -46,12 +54,23 @@ rows_to_keep = c( "UID", "POSITION", "REF", "ALT",
 before38_path = paste(parent_folder, before38_table, sep = "/")
 before40_path = paste(parent_folder, before40_table, sep = "/")
 test_path = paste(parent_folder, test_table, sep = "/")
+s1_9_path = paste(parent_folder, s1_9_table, sep = "/")
 
 before38_dt = data.table(fread(before38_path))
 before40_dt = data.table(fread(before40_path))
 test_file_dt = data.table(fread(test_path))
+s1_9_dt = data.table(fread(s1_9_path))
 
-combined_dt = rbind(before38_dt[, ], before40_dt, test_file_dt)
+#filter s1_9
+
+#S2 is the relevant "before" sample for fig 4 deseq
+s2_dt <- s1_9_dt[EXPERIMENT_SAMPLE_LABEL == "s2"]
+
+```
+
+
+```{r combinedata}
+combined_dt = rbind(before38_dt[, ], before40_dt, test_file_dt, s1_9_dt)
 
 # remove NAs
 combined_dt = Filter(function(x)!all(is.na(x)), combined_dt)
@@ -62,6 +81,9 @@ combined_dt[, n_samples := .N, by=POSITION]
 combined_dt[, n_pos := sum(EXPERIMENT_SAMPLE_LABEL %in% pos_experiments), by='POSITION']
 combined_dt[, n_neg := sum(EXPERIMENT_SAMPLE_LABEL %in% neg_experiments), by='POSITION']
 ```
+
+
+
 
 ```{r}
 

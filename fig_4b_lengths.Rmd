@@ -1,0 +1,160 @@
+---
+title: "fig_4X"
+author: "Max Schubert"
+date: "10/10/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+#library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#dan's suggestion for plotting:
+library(ggrepel)
+
+#for reading sam files
+library(Rsamtools) # first: BiocManager::install("Rsamtools")
+
+
+parent_folder = "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/sam_without_pear/" #temporary, will relocate to git here::here('fig_4x'
+parent_folder = here::here('fig_4B_lengths/')
+source(here::here('constants.R'))
+```
+### here's the code for the "tlen" column of a sam/bam file
+##### there are two rows for each read pair, need to be filtered down to one by removing tlen less than zero
+
+```{r}
+#sample = "S1"
+
+#sample_path = paste(parent_folder, sample, const, sep = "")
+#lens = data.table(fread(sample_path))
+#pos_lens <- lens[ V1 > 0]
+#filter_lens <- pos_lens[V1 < 400]
+
+const = "_tlen"
+mk_lens_table <- function(x,...){
+  sample_path = paste(parent_folder, x, const, sep = "")
+  lens = data.table(fread(sample_path))
+  pos_lens <- lens[ V1 > 0]
+  filter_lens <- pos_lens[V1 < 400]
+  return(filter_lens)
+}
+
+s1 = mk_lens_table("S1")
+s2 = mk_lens_table("S2")
+s3 = mk_lens_table("S3")
+
+s1[, sample := 'WT']
+s2[, sample := 'Strain 1']
+s3[, sample := 'Strain 2']
+
+combined <- rbind(s1, s2, s3)
+
+rm(s1,s2,s3) #remove individual tables
+#hist(combined$V1, breaks = 100) #simple histogram
+```
+
+```{r plot_lengths}
+
+fig_4b_lengths <- ggplot(combined, aes(V1, color = sample)) +
+  geom_freqpoly(binwidth = 10 ) + 
+  theme_linedraw() +
+  labs(
+    x = "Donor Length",
+    y = "Frequency",
+    color = "Sample") +
+  theme(
+    panel.grid.minor.y =element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line = element_line(),
+    panel.border=element_blank() )
+
+fig_4b_lengths
+
+ggsave('fig_4B_lengths.pdf', plot=fig_4b_lengths, width=4, height=3, units='in', dpi=300, useDingbats = FALSE)
+
+```
+
+
+
+
+
+
+###below was alternate code where i was using full bam files
+```{r get_bam}
+
+# as per https://gist.github.com/davetang/6460320
+
+sample = "S1_aln.bam"
+sample_path = paste(parent_folder, sample, sep = "")
+sample_bam <- scanBam(sample_path)
+
+
+#names of the BAM fields
+names(sample_bam[[1]])
+
+#distribution of BAM flags
+table(sample_bam[[1]]$flag)
+
+#function for collapsing the list of lists into a single list
+#as per the Rsamtools vignette
+.unlist <- function (x){
+   ## do.call(c, ...) coerces factor to integer, which is undesired
+   x1 <- x[[1L]]
+   if (is.factor(x1)){
+      structure(unlist(x), class = "factor", levels = levels(x1))
+   } else {
+      do.call(c, x)
+   }
+}
+
+#store names of BAM fields
+bam_field <- names(sample_bam[[1]])
+
+#go through each BAM field and unlist
+list <- lapply(bam_field, function(y) .unlist(lapply(sample_bam, "[[", y)))
+
+
+#try making into data.table in place
+#setDT(list, giveNames=TRUE, keep.rownames=FALSE)
+
+#store as data frame
+bam_df <- do.call("DataFrame", list)
+names(bam_df) <- bam_field
+
+setDT(bam_df) #doesn't work
+
+#report dimensions
+dim(bam_df)
+
+#calculate length
+bam_df$aln_len <- abs(bam_df$mpos - bam_df$pos)
+
+#mk hist
+hist(bam_df$aln_len, breaks = 100)
+#bamFile
+
+#rm NA values
+bam_df <- bam_df[complete.cases(bam_df[ , 14]),]
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
