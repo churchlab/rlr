@@ -39,7 +39,7 @@ liblistpath <- paste(parent_folder,"b26_TC_metadata.csv", sep = "/" )
 liblistdt <- data.table(fread(liblistpath))
 
 #### get donors, merge to create annotated table
-allelelistpath <- paste(parent_folder,"allele_annotated_list_UPDATE.csv", sep = "/" )
+allelelistpath <- paste(parent_folder,"allele_annotated_list_UPDATE_2.csv", sep = "/" )
 seq_annot_dt <- data.table(fread(allelelistpath))
 seq_annot_dt[, bc_read := prodonor_seq]
 
@@ -115,8 +115,6 @@ both_before[,Count_both := sum(Count), by = c('prodonor_seq', 'time_point', 'tx'
 before = both_before
 ```
 
-
-
 ```{r segment}
 #make versions of "before" data assigned to each value of rif, so i can segment on rif?
 before12.5 = before
@@ -158,9 +156,6 @@ before_after_1[, seq_freq := Count_both/total_count_sample]
 at this point, the analysis branches. here i'm examining the ratios of different alleles in rif platings of different conc, to their "initial" frequency in the t = 1 samples
  
 #Rif
-
-
-
 ```{r ratio_summarize}
 before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
       by=c("tx","nickname","rif")] #within each replicate, for each sequence
@@ -190,19 +185,19 @@ binary_summ <- into_summ[,
 
 ```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
 
-color_vals = c('grey44','darkorange3','darkorange2','darkorange')
+color_vals = c('grey44','#00BA38','#00BFC4','#F564E3','#619CCF', '#F8766D')
 
 addline_format <- function(x,...){gsub(' ','\n',x)}
 
 
-current = binary_summ[rif == 12.5]
+current = binary_summ[rif == 25] #rif concentration for binary plot here
 current[, mut_class := factor(
   mut_class,
-  levels=unique(mut_class)[c(2,1,3,4,5)],
-  labels=addline_format(unique(mut_class)[c(2,1,3,4,5)]))]
+  levels=unique(mut_class)[c(1,2,3,4,6,5)],
+  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
 
 
-fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
+fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
   geom_point(size = 2) +
   scale_y_continuous(trans = log_trans(base=10),
@@ -229,18 +224,39 @@ fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(co
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
     legend.position = 'none') +
-  scale_colour_manual(name = "RpoB Allele Type", values = color_vals)
+  scale_colour_manual(values = color_vals)
 
-fig2b
+fig2c
 
-ggsave('fig2c.pdf', plot=fig2b, width=6, height=3, units='in', dpi=300)
+ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
 
 ```
 
+#prepare a summary table for supplement
+```{r rif_allele_summary_supp}
+output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
+                                             "rpoB Allele, unknown effect")]
+output_table[, c("color_cat", "rpoB allele type", "mut_class",
+                 "Count", "N", "mean_seq_freq", "median_seq_freq",
+                 "median_enrichment", "max_enrichment",
+                 "min_enrichment", "logmean_enrichment", 
+                 "sd_freq", "se_freq", "sd_enrichment",
+                 "log_se_enrichment"):=NULL]
+
+#rank highest to lowest by mean enrichment
+output_table[,rank_per_conc := rank(-mean_enrichment), by = "rif"]
+output_to = paste(parent_folder, 'rif_binary_out.csv', sep = "/")
+fwrite(output_table,output_to)
+
+#output all alleles
+unique(binary_summ$nickname)
+```
+
+
 
 ```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
-fig2c <- ggplot(binary_summ[mut_class=='rpoB Alleles'], 
-    aes(x=rif, y=median_enrichment, group=nickname, color=as.factor(color_cat))) + 
+fig2d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance"], 
+    aes(x=rif, y=median_enrichment, group=nickname, color=log(median_enrichment))) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3, width=0.03) +  
   geom_point() + geom_line() +
   scale_y_continuous(trans = log_trans(base=10),
@@ -253,9 +269,11 @@ fig2c <- ggplot(binary_summ[mut_class=='rpoB Alleles'],
   labs(
     x = "Rifampicin Concentration\n(µg/mL)",
     y = "log10 Enrichment",
-    color = "Allele type") + 
+    color = "Log10 Enrichment\nacross\nconcentrations") + 
   geom_hline(yintercept=1, linetype=2) +
-  scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
+  #scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
+  scale_colour_gradient(low = "red", high = "blue") +
+#  na.value = "grey50", guide = "colourbar", aesthetics = "colour") +
   theme_linedraw() +
   theme(text = element_text(size=fig_font_size)) +
   theme(
@@ -263,14 +281,17 @@ fig2c <- ggplot(binary_summ[mut_class=='rpoB Alleles'],
     strip.text=element_text(color='black'), 
     axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
     panel.border=element_blank(),
-    axis.line=element_line(),
-    legend.position = 'none') 
+    axis.line=element_line() )#,
+    #legend.position = 'none') 
 
-fig2c
+fig2d
 
-ggsave(here::here('fig2c.pdf'), plot=fig2c, width=3, height=3, units='in', dpi=300)
+ggsave(here::here('fig2d.pdf'), plot=fig2d, width=5, height=3, units='in', dpi=300)
 
 ```
+
+
+######### deprecated: plotting both as one panel
 
 ```{r fig2bc, fig.width=6, fig.height=2, units='in', dpi=300}
 

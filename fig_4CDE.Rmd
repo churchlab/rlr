@@ -22,7 +22,7 @@ library(plotly)
 #dan's suggestion for plotting:
 library(ggrepel)
 
-parent_folder = here::here('fig_4b')
+parent_folder = here::here('fig_4CDE')
 source(here::here('constants.R'))
 
 #set global variables for shifting plotting:
@@ -37,9 +37,9 @@ genome_size = 4641652
 ### this communicates that the whole genome is covered, and that coverage is decently even
 ```{r before_coverage_data}
 #s2 data as 4C
-samplenum = 's2'
-depthspath <- "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/bwa_sam_bam_depths/"
-path_cov <- paste(depthspath,samplenum, "_depths", sep = "")
+file_name = 's2_uniq_dp'
+#depthspath <- "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/sam_without_pear/"
+path_cov <- paste(parent_folder,file_name, sep = "/")
 cov <- fread(path_cov)
 names(cov) <- c('chr','pos','count')
 
@@ -75,15 +75,17 @@ before_cov_plot_dots <- ggplot(wcov_new) +
     legend.position = 'none') +
   #label ori and ter for clarity:
   geom_vline(xintercept = ori_pos,
-             linetype="dashed", color = "black",
-             alpha = 0.2, size = 1) +
+             linetype="dashed", color = "blue",
+             alpha = 0.9, size = 1) +
   geom_vline(xintercept = ter_pos,
-             linetype="dashed", color = "black",
-             alpha = 0.2, size = 1) +
-  annotate("text",
-           x = ori_pos-200000, y = 175, label = "Ori") + #annotate ori, adjusted
-  annotate("text",
-           x = ter_pos-200000, y = 175, label = "Ter") +
+             linetype="dashed", color = "green",
+             alpha = 0.9, size = 1) +
+  #annotate("text",
+  #         x = ori_pos-200000, y = max(wcov_new$mean_window_count),
+  #         label = "Ori", position = "nudge") + #annotate ori, adjusted -200000
+  #annotate("text",
+  #         x = ter_pos-200000, y = max(wcov_new$mean_window_count),
+  #         label = "Ter", position = "nudge") + #annotate ter, adjusted -200000
   #actual window coverage data as points:
   geom_point(aes(y=mean_window_count, x=window,
                  alpha = 0.001, stroke = 0)) +
@@ -96,6 +98,7 @@ before_cov_plot_dots
 
 ggsave('fig_4C_coverage.pdf', plot=before_cov_plot_dots, width=5, height=2, units='in', dpi=300, useDingbats = FALSE)
 ```
+
 
 # data for enrichment of alleles, 
 ```{r get_enriched_SNP_data}

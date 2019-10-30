@@ -26,6 +26,67 @@ parent_folder = here::here('fig_4c_possibly')
 
 ```
 
+
+###### trimmed version
+```{r get_trimmed_data}
+#the new stuff, annotated
+trimmed_table = "t1000_t1500_trimmedvariants.csv"
+trimmed_path = paste(parent_folder, trimmed_table, sep = "/")
+trimmed_dt = data.table(fread(trimmed_path))
+
+#ditch columns with na's
+#cutting down table to only a few columns
+trimmed_dt = Filter(function(x)!all(is.na(x)), trimmed_dt) #kills columns with all NA
+trimmed_dt = trimmed_dt[,c( "UID", "POSITION",
+                                        "REF", "ALT", "AF", "IS_HET",
+                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
+#throw out alleles with low allelic fraction
+trimmed_dt = subset(trimmed_dt, AF > .90)
+
+#compute summary stats
+trimmed_dt[,mean_dp := mean(DP) , by=c("EXPERIMENT_SAMPLE_LABEL")]
+trimmed_dt[,sd_dp := sd(DP) , by=c("EXPERIMENT_SAMPLE_LABEL")]
+#compute z scores
+trimmed_dt[, z_score := (DP- mean_dp)/sd_dp]
+```
+```{r plot_trimmed}
+
+###### new version with zscores
+fig4d_z <- ggplot(trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "t1000.cutadapt.trim.fastq.bz2"],
+       aes(x=POSITION, y=z_score, label = INFO_EFF_GENE, color = INFO_EFF_EFFECT)) + 
+  geom_point(size = 2, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = -1.1, data = subset(trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "t1000.cutadapt.trim.fastq.bz2"],
+                                      z_score > 1)) +
+  theme(text = element_text(size=14),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.minor.x=element_blank(),) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5,6),
+                     limits = c(-0.7, 6)) +
+  labs(
+    x = "Genome position",
+    y = "Enrichment of SNPs (Z score)")
+
+fig4d_z
+
+ggsave(here::here('fig4d_zscore2.pdf'), plot=fig4d_z, width=8, 
+       height=6, units='in', dpi=300, device = cairo_pdf)
+```
+
+
+
+
+
+
+
+
+
+
+########## cruft below
+#todo delete
 ```{r get data}
 #can update when i get the new stuff
 test_table = "variants_fromT1000T1500.csv"
@@ -37,30 +98,97 @@ test_file_dt = data.table(fread(test_path))
 #cutting down table to only a few columns
 test_file_dt = Filter(function(x)!all(is.na(x)), test_file_dt) #kills columns with all NA
 test_file_trimmed_dt = test_file_dt[,c( "UID", "POSITION",
-                                        "REF", "ALT",
+                                        "REF", "ALT", "AF", "IS_HET",
                                         "EXPERIMENT_SAMPLE_LABEL", "DP",
                                         "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
                                         "INFO_EFF_AA","INFO_EFF_GT",
                                         "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
+#throw out alleles with low allelic fraction
+test_file_trimmed_dt = subset(test_file_trimmed_dt, AF > .90)
 
+
+#compute summary stats
+summary <- test_file_trimmed_dt[,
+                        list(
+                          N= .N,
+                          mean_dp = mean(DP),
+                          sd= sd(DP)),
+                          #se= sd(DP) / sqrt(.N)),
+                        by=c("EXPERIMENT_SAMPLE_LABEL")]
+
+#compute SD bins above mean
+T1000 <- test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"]
+
+meandp1000 = summary[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"]$mean_dp
+sddp1000 = summary[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"]$sd
+T1000[, z_score := (DP- meandp1000)/sddp1000]
 ```
 
 ```{r plot_1000}
-ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"], aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
-  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
+
+###### new version with zscores
+ggplot(T1000, aes(x=POSITION, y=z_score, label = INFO_EFF_GENE)) + 
+  geom_point(size = 1, alpha = 0.5) +
   theme_bw() +
-  geom_text(vjust = 0, data = subset(test_file_trimmed_dt, DP > 1000 & EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt")) +
-  theme(text = element_text(size=18)) #+
-  #coord_polar()
-  #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
-  #coord_polar() # +
-  #geom_text_repel() +
-  #labs(
-  #  x = "Mutations, by genomic coordinate",
-  #  y = "Depth of coverage",
-  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
-  #  color = "Sample")
+  geom_text(vjust = -1, data = subset(T1000, z_score > 1.5)) +
+  theme(text = element_text(size=18),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.minor.x=element_blank(),) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5,6),
+                     limits = c(-0.7, 7))
 ```
+
+######## new version with manual followup on SNP calling
+```{r get_more_data}
+#the new stuff, annotated
+annotated_table = "T1000_var_10_27.csv"
+annotated_path = paste(parent_folder, annotated_table, sep = "/")
+new_dt = data.table(fread(annotated_path))
+
+#ditch columns with na's
+#cutting down table to only a few columns
+new_dt = Filter(function(x)!all(is.na(x)), new_dt) #kills columns with all NA
+new_trimmed_dt = new_dt[,c( "UID", "POSITION", "manual_examination",
+                                        "REF", "ALT", "AF", "IS_HET",
+                                        "EXPERIMENT_SAMPLE_LABEL", "DP",
+                                        "INFO_EFF_CONTEXT","INFO_EFF_EFFECT",
+                                        "INFO_EFF_AA","INFO_EFF_GT",
+                                        "INFO_EFF_CLASS", "INFO_EFF_GENE")] #keeps only specified columns
+#throw out alleles with low allelic fraction
+new_trimmed_dt = subset(new_trimmed_dt, AF > .90)
+#throw out alleles that failed manual inspection (only looked at top hits)
+new_inspected_dt = new_trimmed_dt[! manual_examination %in% FALSE]
+
+#compute summary stats
+new_summary <- new_inspected_dt[,
+                        list(
+                          N= .N,
+                          mean_dp = mean(DP),
+                          sd= sd(DP)),
+                          #se= sd(DP) / sqrt(.N)),
+                        by=c("EXPERIMENT_SAMPLE_LABEL")]
+
+#compute SD bins above mean
+#T1000 <- new_inspected_dt[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"]
+
+meandp1000_new = new_summary$mean_dp
+sddp1000_new = new_summary$sd
+new_inspected_dt[, z_score := (DP- meandp1000_new)/sddp1000_new]
+```
+```{r plot_1000_new}
+
+###### new version with zscores
+ggplot(new_inspected_dt, aes(x=POSITION, y=z_score, label = INFO_EFF_GENE)) + 
+  geom_point(size = 1, alpha = 0.5) +
+  theme_bw() +
+  geom_text(vjust = -1, data = subset(new_inspected_dt, z_score > 2)) +
+  theme(text = element_text(size=18),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.minor.x=element_blank(),) +
+  scale_y_continuous(breaks = c(0,1,2,3,4,5,6),
+                     limits = c(-0.7, 7))
+```
+
 
 #8/29/2019 trying new stuff
 ```{r plot_new}
@@ -401,24 +529,28 @@ ggplot(dt40plus_filter[EXPERIMENT_SAMPLE_LABEL == "40B"], aes(x=POSITION, y=snp_
 ```
 
 
-###### cutadapt-ed data found
 
-```{r cutadapt_data}
-cutadapt_table = "t1000_t1500_cutadapt_what.csv"
 
-cutadapt_path = paste(parent_folder, cutadapt_table, sep = "/")
-cutadapt_file_dt = data.table(fread(cutadapt_path))
-cutadapt_file_dt = Filter(function(x)!all(is.na(x)), test_file_dt) #kills columns with all NA
-```
-```{r plot_cutadapt}
-ggplot(cutadapt_file_dt, aes(x=POSITION, y=DP, label = INFO_EFF_GENE)) +
-  geom_point(size = 2, alpha = 0.5) +
-  #geom_col(position = position_dodge(), size = 2, alpha = 0.5) +
+
+###### old version
+ggplot(test_file_trimmed_dt[EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt"], aes(x=POSITION, y=DP, color=EXPERIMENT_SAMPLE_LABEL, label = INFO_EFF_GENE)) + 
+  geom_col(position = position_dodge(width = 0.9), size = 2, alpha = 0.5) +
   theme_bw() +
-  geom_text(vjust = 0, data = subset(cutadapt_file_dt, DP > 1000 )) +
-  theme(text = element_text(size=18)) +
-  facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y')
-  
-```
+  geom_text(vjust = 0, data = subset(test_file_trimmed_dt, DP > 1000 & EXPERIMENT_SAMPLE_LABEL == "T1000_cutadapt")) +
 
+
+  #line at mean
+  
+  #line at 
+  
+  #+
+  #coord_polar()
+  #facet_wrap(~EXPERIMENT_SAMPLE_LABEL, nrow=2, ncol=1, scales = 'free_y') +
+  #coord_polar() # +
+  #geom_text_repel() +
+  #labs(
+  #  x = "Mutations, by genomic coordinate",
+  #  y = "Depth of coverage",
+  #  title = "Loci conferring TMP resistance in sheared gDNA RLR",
+  #  color = "Sample")
 
