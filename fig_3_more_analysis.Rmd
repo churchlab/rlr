@@ -23,7 +23,7 @@ library(here)
 library(ggpubr)
 library(here)
 
-parent_folder <- here::here('fig_2bc')
+parent_folder <- here::here('fig_2cd')
 source(here::here('constants.R'))
 ```
 
@@ -56,9 +56,6 @@ pct_annot = num_annot/num_merged
 num_merged = as.character(num_merged)
 num_annot = as.character(num_annot)
 pct_annot = as.character(pct_annot)
-
-
-
 
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
@@ -102,90 +99,99 @@ print(paste(num_annot, "reads annotated of",
             pct_annot, "%", sep = " "))
 ```
 
-```{r add new data for timepoint 1 to old}
-#create "before" table for old data, new, with beta only
-before = seq_annotated_megatable[time_point == 1][tx %in% c(1,2,3)]
-before2 = seq_annotated_megatable2[time_point == 1][tx %in% c(1,2,3)]
 
 
-both_before = rbind(before, before2, fill = TRUE)
-#TDO TODO need to trim table down to smaller set of things, if I'm going to combine my timepoint, etc
-both_before[,Count_both := sum(Count), by = c('prodonor_seq', 'time_point', 'tx')]
+```{r add new data for timepoints1,2,3 to old}
+#label, rbind new and old data
+seq_annotated_megatable$seq_run = 1
+seq_annotated_megatable2$seq_run = 2
+seq_annotated_both = rbind(seq_annotated_megatable, seq_annotated_megatable2, fill = TRUE)
 
-before = both_before
+#filter to tc, and get rid of columns, for clarity
+seq_annotated_both = seq_annotated_both[expt_set != "binary"]
+seq_annotated_both[, c("Library Id","read_id","Library Name","operation",
+               "total_count", "options",
+               "mutation", "barcodes", "drug_resistance_expected",
+               "drug_sensitivity_expected", "expt_set",
+               "Sample", "wt", "altered", 
+               "previous_name", "previous_category", "rpoB allele type",
+               "allele_type_notes","color_cat",
+               "i5_index", "i7_index", "idx1_seq","idx2_seq",
+               "5prime_cutadapt"):=NULL]
+
+#combine counts for new and old, then remove redundant rows for set 2
+seq_annotated_both[,Count_both := sum(Count), by = c('tx', 'ssap', 'rif', 'time_point', 'prodonor_seq')]
+seq_annotated_both = seq_annotated_both[ seq_run == 1 ]
+
+#rename count as Count_both and get rid of old columns
+seq_annotated_both[, count := Count_both]
+seq_annotated_both[, c("Count","Count_both"):=NULL]
+
 ```
 
-```{r segment}
-#make versions of "before" data assigned to each value of rif, so i can segment on rif?
-before12.5 = before
-before12.5$rif = 12.5
-before25 = before
-before25$rif = 25
-before50 = before
-before50$rif = 50
-before100 = before
-before100$rif = 100
 
-after = seq_annotated_megatable[(expt_set == "binary")]
-after[,Count_both := Count]
-before_after_1  <- rbind(before12.5, before25, before50, before100, after, fill = TRUE)
-before_after_1 <- before_after_1[expt_set != "tc_2"]
-
-
-#rm(before, after, before12.5, before25, before50, before100) #remove transitional tables
-
-#while we're at it, clean up the table
-before_after_1[, c("Library Id","read_id","Library Name","ssap","operation",
-               "total_count",
-               "bc_read",
-               "options",
-               "mutation",
-               "barcodes",
-               "drug_resistance_expected",
-               "drug_sensitivity_expected"):=NULL]
-```
-
+```{r calculate frequencies and normalize}
 ## calculate frequency of each seq (sec count / total count)
-```{r calculate frequencies}
-before_after_1[, total_count_sample := sum(Count_both), by=c('time_point','tx', 'rif')]
-#important: pseudocount of one given to undetected sequences AFTER calculating totals
-before_after_1[Count_both == 0, Count_both := 1]
+seq_annotated_both[, total_count_sample := sum(count), by=c('time_point','tx')]
+#pseudocount of one given to undetected sequences AFTER calculating totals:
+seq_annotated_both[count == 0, count := 1]
+seq_annotated_both[, seq_freq := count/total_count_sample]
 
-before_after_1[, seq_freq := Count_both/total_count_sample]
+#calculate mean of neutral controls, ratio of each to this, also try sum of all neutrals
+seq_annotated_both[, mean_neutrals := mean(count[mut_class == "Neutral"]), by = c('time_point','tx')]
+seq_annotated_both[, median_neutrals := median(as.numeric(count[mut_class == "Neutral"])),
+                   by=c('time_point','tx')]
+seq_annotated_both[, ratio_mean_neutrals := count/mean_neutrals]
+seq_annotated_both[, ratio_median_neutrals := count/median_neutrals]
+
+
+#seq_annotated_both[, ratio_median_neutrals_by := count/median_neutrals, by='bc_read']
+#before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
+#      by=c("tx","nickname","rif")] #within each replicate, for each sequence
+
 ```
-at this point, the analysis branches. here i'm examining the ratios of different alleles in rif platings of different conc, to their "initial" frequency in the t = 1 samples
- 
-#Rif
 
+```{r summarize}
+#into_summ = before_after_1[time_point == 3] #[Count > 5] #throwing out count filter!
 
-
-```{r ratio_summarize}
-before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
-      by=c("tx","nickname","rif")] #within each replicate, for each sequence
-
-into_summ = before_after_1[time_point == 3] #[Count > 5] #throwing out count filter!
-binary_summ <- into_summ[,
+tc_summ <- seq_annotated_both[,
                         list(
-                          Count = mean(Count),
+                          mean_count = mean(count),
                           N= .N,
                           mean_seq_freq = mean(seq_freq),
-                          median_seq_freq = median(seq_freq),
-                          mean_enrichment = mean(enrichment.post.rif),
-                          median_enrichment = median(enrichment.post.rif),
-                          max_enrichment = max(enrichment.post.rif),
-                          min_enrichment = min(enrichment.post.rif),
-                          logmean_enrichment = 10^mean(log10(enrichment.post.rif)),
-                          sd_freq = sd(seq_freq),
-                          se_freq = sd(seq_freq) / sqrt(.N),
-                          sd_enrichment= sd(enrichment.post.rif),
-                          se_enrichment= sd(enrichment.post.rif) / sqrt(.N),
-                          log_se_enrichment= 10^sd(log10(enrichment.post.rif)) / sqrt(.N)
-                          ), by=c("nickname", "mut_class", "rif", "color_cat", "rpoB allele type")]
+                          mean_ratio_mean_neutrals = mean(ratio_mean_neutrals),
+                          mean_ratio_median_neutrals = mean(ratio_median_neutrals),
+                          logmean_ratio_mean_neutrals = 10^mean(log10(ratio_mean_neutrals)),
+                          se_ratio_mean_neutrals = sd(ratio_mean_neutrals) / sqrt(.N),
+                          se_ratio_median_neutrals = sd(ratio_median_neutrals) / sqrt(.N),
+                          log_se_ratio_mean_neutrals= 10^sd(log10(ratio_mean_neutrals)) / sqrt(.N)
+                          ), by=c("nickname", "mut_class", "rif",
+                                  'time_point', 'ssap', 'mfe')]
 
 ```
+```{r plot}
+tc_summ_rif5 <- tc_summ[rif == 5][ssap == 'PF020']
+tc_summ_rif0 <- tc_summ[rif == 0][ssap == 'PF020']
+
+ggplot(tc_summ_rif0, aes(x=mean_ratio_median_neutrals, y=mean_ratio_median_neutrals_by,
+                         color=mut_class, group = interaction(nickname, ssap))) + 
+  #geom_errorbar(aes(ymin=mean_ratio_mean_neutrals-se_ratio_mean_neutrals,
+  #                  ymax=mean_ratio_mean_neutrals+se_ratio_mean_neutrals,
+  #                  alpha = .3), width=.1) +
+  geom_line(aes(alpha = .3)) +
+  geom_point(aes(group = nickname, alpha = .3)) +
+  scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
+                     breaks = c(.0001, .001, .01, .1, 1, 10, 100, 1000, 10000, 100000, 1000000)) +
+  theme_bw() +
+  facet_wrap(~mut_class)+
+  theme(legend.position="none")
+```
+
+
+
+#fig2 plotting statements...
 
 # plot in groups
-
 ```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
 
 color_vals = c('grey44','darkorange3','darkorange2','darkorange')
@@ -200,7 +206,7 @@ current[, mut_class := factor(
   labels=addline_format(unique(mut_class)[c(2,1,3,4,5)]))]
 
 
-fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
+fig2b <- ggplot(tc_summ, aes(x=nickname, y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
   geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
   geom_point(size = 2) +
   scale_y_continuous(trans = log_trans(base=10),
@@ -231,6 +237,6 @@ fig2b <- ggplot(current, aes(x=nickname, y=median_enrichment, color=as.factor(co
 
 fig2b
 
-ggsave('fig2c.pdf', plot=fig2b, width=6, height=3, units='in', dpi=300)
+#ggsave('fig2c.pdf', plot=fig2b, width=6, height=3, units='in', dpi=300)
 
 ```
