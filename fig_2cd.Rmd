@@ -193,10 +193,13 @@ addline_format <- function(x,...){gsub(' ','\n',x)}
 
 
 current = binary_summ[rif == 25] #rif concentration for binary plot here
+
 current[, mut_class := factor(
   mut_class,
   levels=unique(mut_class)[c(1,2,3,4,6,5)],
   labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
+
+
 
 
 fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
@@ -230,9 +233,57 @@ fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enr
 
 fig2c
 
-ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
+#ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
 
 ```
+
+##version showing all data points:
+```{r show all data}
+before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
+      by=c("tx","nickname","rif")] #within each replicate, for each sequence
+
+into_summ = before_after_1[time_point == 3]
+
+current = into_summ[rif == 25]
+current[, mut_class := factor(
+  mut_class,
+  levels=unique(mut_class)[c(1,2,3,4,6,5)],
+  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
+
+fig2c <- ggplot(current, aes(x=reorder(nickname,enrichment.post.rif), y=enrichment.post.rif, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
+  #geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
+  geom_point(size = 2) +
+  scale_y_continuous(trans = log_trans(base=10),
+                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
+                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
+                     limits=10^(c(-5.2,1.6))) +
+  scale_x_discrete(expand=c(0.16,0.16)) +
+  facet_grid(~mut_class, scales='free_x', switch='both') +
+  labs(
+    x = "Allele",
+    y = "Allelic enrichment, (log10)\n 25 µg/mL Rifampicin",
+    color = "Allele type") + 
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2) +
+  theme(text = element_text(size=fig_font_size)) +
+  theme(
+    axis.text.x= element_blank(),
+    axis.ticks.x=element_blank(),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    panel.spacing=unit(0,'pt'),
+    panel.border=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none') +
+  scale_colour_manual(values = color_vals)
+
+fig2c
+
+```
+
+
 
 #prepare supplemental table 1B, list of figure 2CD results for rif alleles
 ```{r rif_allele_summary_supp}

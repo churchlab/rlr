@@ -1,5 +1,5 @@
 ---
-title: "Fig_4c_possibly"
+title: "Fig_4D"
 author: "Max Schubert"
 date: "6/18/2019"
 output: html_document
@@ -22,7 +22,7 @@ library(plotly)
 #dan's suggestion for plotting:
 library(ggrepel)
 
-parent_folder = here::here('fig_4c_possibly')
+parent_folder = here::here('fig_4D')
 
 ```
 
