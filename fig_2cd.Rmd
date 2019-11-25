@@ -62,7 +62,7 @@ pct_annot = as.character(pct_annot)
 
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
-            pct_annot, "%", sep = " "))
+            100*pct_annot, "%", sep = " "))
 ```
 
 ```{r PULL_NEW_DATA}
@@ -99,7 +99,7 @@ pct_annot = as.character(pct_annot)
 
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
-            pct_annot, "%", sep = " "))
+            100*pct_annot, "%", sep = " "))
 ```
 
 ```{r add new data for timepoint 1 to old}
@@ -165,13 +165,15 @@ binary_summ <- into_summ[,
                         list(
                           Count = mean(Count),
                           N= .N,
+                          number_undetected = sum(Count_both == 1),
                           mean_seq_freq = mean(seq_freq),
                           median_seq_freq = median(seq_freq),
                           mean_enrichment = mean(enrichment.post.rif),
                           median_enrichment = median(enrichment.post.rif),
                           max_enrichment = max(enrichment.post.rif),
-                          min_enrichment = min(enrichment.post.rif),
                           logmean_enrichment = 10^mean(log10(enrichment.post.rif)),
+                          logsd_enrichment = sd(log10(enrichment.post.rif)),
+                          iqr_enrichment = IQR(enrichment.post.rif),
                           sd_freq = sd(seq_freq),
                           se_freq = sd(seq_freq) / sqrt(.N),
                           sd_enrichment= sd(enrichment.post.rif),
@@ -198,16 +200,37 @@ current[, mut_class := factor(
   levels=unique(mut_class)[c(1,2,3,4,6,5)],
   labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
 
+# lower limit, unfilled/filled
+current_combine_lethal = copy(current)
+current_combine_lethal[mut_class == 'Deleterious', mut_class := 'Lethal']
+current_combine_lethal[mut_class == 'Lethal', mut_class := 'Lethal/Deleterious']
+current_combine_lethal[mut_class == 'Lethal/Deleterious', color_cat := 2]
+current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(7,3:6)])]
 
-fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
-  geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
-  geom_point(size = 2) +
-  scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
-                     limits=10^(c(-5.2,1.6))) +
+fig2c <- ggplot(current_combine_lethal, aes(
+    x=reorder(nickname,logmean_enrichment), 
+    y=pmax(1e-3, logmean_enrichment), 
+    color= as.factor(color_cat),
+    fill= as.factor(color_cat))) + 
+  geom_linerange(aes(
+    ymin=pmax(1e-3,logmean_enrichment-iqr_enrichment), 
+    ymax=pmax(1e-3,logmean_enrichment+iqr_enrichment)),
+    color="black", 
+    alpha = 0.3) +  
+  geom_point(data=current_combine_lethal[number_undetected == 0], size = 2, shape=21) +
+  geom_point(data=current_combine_lethal, size = 2, shape=21, fill=NA) +
+  geom_text(data=current_combine_lethal[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
+  geom_point(data=current_combine_lethal[number_undetected == 3], size = 2, shape=21, fill='white') +
+  scale_colour_manual(values = color_vals[2:6]) +
+  scale_fill_manual(values = color_vals[2:6]) +
+  scale_y_continuous(
+    trans = log_trans(base=10),
+    breaks = c(.001, .01, .1, 1, 10, 100),
+    labels = c('\u2265 -3', log10(c(.01, .1, 1, 10, 100))),
+    limits=10^(c(-3.2,1.6)),
+    expand=c(-0.01,0)) +
   scale_x_discrete(expand=c(0.16,0.16)) +
-  facet_grid(~mut_class, scales='free_x', switch='both') +
+  facet_grid(~mut_class, scales='free_x', space='free_x', switch='both') +
   labs(
     x = "Allele",
     y = "Allelic enrichment, (log10)\n 25 µg/mL Rifampicin",
@@ -225,12 +248,11 @@ fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enr
     panel.grid.major.x=element_blank(),
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
-    legend.position = 'none') +
-  scale_colour_manual(values = color_vals)
+    legend.position = 'none')
 
 fig2c
 
-ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
+ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
 
 ```
 
