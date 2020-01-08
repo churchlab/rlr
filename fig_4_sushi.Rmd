@@ -1,5 +1,5 @@
 ---
-title: "fig_4_sushi"
+title: "fig_4C"
 author: "Max Schubert"
 date: "10/17/2019"
 output: html_document
@@ -26,14 +26,12 @@ library(ggrepel)
 library(cowplot)
 library(gridGraphics) #first install.packages('gridGraphics')
 
-parent_folder = here::here('fig_4_sushi') #TODO UPDATE WITH REAL NAME
+parent_folder = here::here('fig_4C/')
 source(here::here('constants.R'))
 ```
 
 ```{r import_data}
-#TODO: upload to git
-bedpath = "/Users/Max_Schubert/dropbox_hms/active_seq_reads/jan_2019_nextseq/FC_04592/Unaligned_1234_PF_mm1/Data/merged_replicates/"
-
+bedpath = parent_folder
 
 #import depth
 AB3_folA_nonuniq_dp = read.delim(paste(bedpath, "AB3_folA_nonuniq_dp", sep = ""), sep = "\t")
@@ -144,6 +142,9 @@ facetted <- plot_grid(depth_plot, col_plot, nrow = 2)
 ggsave('fig_4C_sushi.pdf', plot=facetted, width=4, height=5, units='in', dpi=300, useDingbats = FALSE)
 ```
 
+
+
+#### cruft below
 
 
 

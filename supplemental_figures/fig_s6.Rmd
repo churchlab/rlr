@@ -22,7 +22,7 @@ library(plotly)
 #dan's suggestion for plotting:
 library(ggrepel)
 
-parent_folder = here::here('fig_4CDE')
+parent_folder = here::here('supplemental_figures/fig_s6/')
 source(here::here('constants.R'))
 
 #set global variables for shifting plotting:
