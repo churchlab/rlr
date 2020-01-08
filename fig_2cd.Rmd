@@ -62,7 +62,7 @@ pct_annot = as.character(pct_annot)
 
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
-            100*pct_annot, "%", sep = " "))
+            100*as.numeric(pct_annot), "%", sep = " "))
 ```
 
 ```{r PULL_NEW_DATA}
@@ -186,33 +186,23 @@ binary_summ <- into_summ[,
 ```
 
 # plot in groups
-
 ```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
 
-color_vals = c('grey44','#00BA38','#00BFC4','#F564E3','#619CCF', '#F8766D')
+color_vals = c('#00BA38', #green
+               '#619CCF', #dark blue
+               '#F564E3', #purple
+               '#F8766D', #red
+               '#B79F00') #gold
 
 addline_format <- function(x,...){gsub(' ','\n',x)}
 
-
-current = binary_summ[rif == 25] #rif concentration for binary plot here
+current = binary_summ[rif == 12.5] #rif concentration for binary plot here
 
 current[, mut_class := factor(
   mut_class,
   levels=unique(mut_class)[c(1,2,3,4,6,5)],
   labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
-
-<<<<<<< HEAD
-
-
-
-fig2c <- ggplot(current, aes(x=reorder(nickname,median_enrichment), y=median_enrichment, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
-  geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
-  geom_point(size = 2) +
-  scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
-                     limits=10^(c(-5.2,1.6))) +
-=======
+  
 # lower limit, unfilled/filled
 current_combine_lethal = copy(current)
 current_combine_lethal[mut_class == 'Deleterious', mut_class := 'Lethal']
@@ -222,31 +212,31 @@ current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)
 
 fig2c <- ggplot(current_combine_lethal, aes(
     x=reorder(nickname,logmean_enrichment), 
-    y=pmax(1e-3, logmean_enrichment), 
+    y=pmax(1e-4, logmean_enrichment), 
     color= as.factor(color_cat),
     fill= as.factor(color_cat))) + 
   geom_linerange(aes(
-    ymin=pmax(1e-3,logmean_enrichment-iqr_enrichment), 
-    ymax=pmax(1e-3,logmean_enrichment+iqr_enrichment)),
+    ymin=pmax(1e-4,logmean_enrichment-iqr_enrichment), 
+    ymax=pmax(1e-4,logmean_enrichment+iqr_enrichment)),
     color="black", 
     alpha = 0.3) +  
   geom_point(data=current_combine_lethal[number_undetected == 0], size = 2, shape=21) +
   geom_point(data=current_combine_lethal, size = 2, shape=21, fill=NA) +
   geom_text(data=current_combine_lethal[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
   geom_point(data=current_combine_lethal[number_undetected == 3], size = 2, shape=21, fill='white') +
-  scale_colour_manual(values = color_vals[2:6]) +
-  scale_fill_manual(values = color_vals[2:6]) +
+  scale_colour_manual(values = color_vals[1:5]) +
+  scale_fill_manual(values = color_vals[1:5]) +
   scale_y_continuous(
     trans = log_trans(base=10),
     breaks = c(.001, .01, .1, 1, 10, 100),
     labels = c('\u2265 -3', log10(c(.01, .1, 1, 10, 100))),
-    limits=10^(c(-3.2,1.6)),
+    limits=10^(c(-4.2,1.6)),
     expand=c(-0.01,0)) +
   scale_x_discrete(expand=c(0.16,0.16)) +
   facet_grid(~mut_class, scales='free_x', space='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "Allelic enrichment, (log10)\n 25 µg/mL Rifampicin",
+    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
@@ -271,31 +261,71 @@ ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300,
 
 ```
 
-##version showing all data points:
-```{r show all data}
-before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
-      by=c("tx","nickname","rif")] #within each replicate, for each sequence
+# MS1/7/2019 figure refactor
+```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
 
-into_summ = before_after_1[time_point == 3]
+color_vals = c('#00BA38', #green
+               '#619CCF', #dark blue
+               #'#F564E3', #purple
+               '#F8766D') #, #red
+               #'#B79F00'# #gold
 
-current = into_summ[rif == 25]
-current[, mut_class := factor(
+#addline_format <- function(x,...){gsub(' ','\n',x)}
+
+current = binary_summ[rif == 12.5] #rif concentration for binary plot here
+
+
+# lower limit, unfilled/filled, combine del/lethal, neutral/unrelated
+#also plot all rif resistance and rpoB alleles together
+current_combined = copy(current)
+current_combined[mut_class == 'Deleterious', mut_class := 'Lethal']
+current_combined[mut_class == 'Lethal', mut_class := 'Lethal,\nDeleterious']
+current_combined[mut_class == 'Lethal,\nDeleterious', color_cat := 1]
+
+current_combined[mut_class == 'Unrelated Resistance Alleles', mut_class := 'Neutral']
+current_combined[mut_class == 'Neutral', mut_class := 'Neutral,\nUnrelated Resistance']
+current_combined[mut_class == 'Neutral,\nUnrelated Resistance', color_cat := 2]
+
+#plot all rpoB alleles together
+current_combined[mut_class == 'Rifampicin Resistance', mut_class := 'rpoB\nMissense']
+current_combined[mut_class == 'rpoB Allele, unknown effect', mut_class := 'rpoB\nMissense']
+current_combined[mut_class == 'rpoB\nMissense', color_cat := 3]
+
+#reorder
+current_combined[, mut_class := factor(
   mut_class,
-  levels=unique(mut_class)[c(1,2,3,4,6,5)],
-  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
+  levels=unique(mut_class)[c(1,2,3)],
+  labels=unique(mut_class)[c(1,2,3)])]
+  
+#current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(3:6)])]
 
-fig2c <- ggplot(current, aes(x=reorder(nickname,enrichment.post.rif), y=enrichment.post.rif, color=as.factor(color_cat), fill = as.factor(color_cat))) + 
-  #geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3) +  
-  geom_point(size = 2) +
-  scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
-                     limits=10^(c(-5.2,1.6))) +
+fig2c <- ggplot(current_combined, aes(
+    x=reorder(nickname,logmean_enrichment), 
+    y=pmax(1e-4, logmean_enrichment), 
+    color= as.factor(color_cat),
+    fill= as.factor(color_cat))) + 
+  geom_linerange(aes(
+    ymin=pmax(1e-4,logmean_enrichment-se_enrichment), 
+    ymax=pmax(1e-4,logmean_enrichment+se_enrichment)),
+    color="black", 
+    alpha = 0.3) +  
+  geom_point(data=current_combined[number_undetected == 0], size = 2, shape=21) +
+  geom_point(data=current_combined, size = 2, shape=21, fill=NA) +
+  geom_text(data=current_combined[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
+  geom_point(data=current_combined[number_undetected == 3], size = 2, shape=21, fill='white') +
+  scale_colour_manual(values = color_vals[1:5]) +
+  scale_fill_manual(values = color_vals[1:5]) +
+  scale_y_continuous(
+    trans = log_trans(base=10),
+    breaks = c(.0001, .001, .01, .1, 1, 10, 100),
+    labels = c('\u2265 -4', log10(c(.001,.01,.1, 1, 10, 100))),
+    limits=10^(c(-4.2,1.6)),
+    expand=c(-0.01,0)) +
   scale_x_discrete(expand=c(0.16,0.16)) +
-  facet_grid(~mut_class, scales='free_x', switch='both') +
+  facet_grid(~mut_class, scales='free_x', switch = 'both') + #, scales='free_x', space='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "Allelic enrichment, (log10)\n 25 µg/mL Rifampicin",
+    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
@@ -310,20 +340,22 @@ fig2c <- ggplot(current, aes(x=reorder(nickname,enrichment.post.rif), y=enrichme
     panel.grid.major.x=element_blank(),
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
-    legend.position = 'none') +
-  scale_colour_manual(values = color_vals)
+    legend.position = 'none')
 
 fig2c
 
-```
+#ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
 
+ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
+
+```
 
 
 #prepare supplemental table 1B, list of figure 2CD results for rif alleles
 ```{r rif_allele_summary_supp}
 output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
                                              "rpoB Allele, unknown effect")]
-output_table[, c("color_cat", "rpoB allele type", "mut_class",
+output_table[, c("rpoB allele type", "mut_class", #color_cat
                  "Count", "N", "mean_seq_freq", "median_seq_freq",
                  "median_enrichment", "max_enrichment",
                  "min_enrichment", "logmean_enrichment", 
@@ -340,26 +372,28 @@ unique(binary_summ$nickname)
 ```
 
 
-
 ```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
+color_vals_D = c('#F8766D', #red
+                 '#B79F00') #gold
+
 fig2d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rpoB_C_1576_G'], 
-    aes(x=rif, y=median_enrichment, group=nickname, color=log(median_enrichment))) + 
-  geom_errorbar(aes(ymin=min_enrichment, ymax=max_enrichment), color="black", alpha = 0.3, width=0.03) +  
+    aes(x=rif, y=mean_enrichment, group=nickname, color = mut_class )) + #color=log(median_enrichment) 
+  #geom_errorbar(aes(ymin=median_enrichment - se_enrichment, ymax=median_enrichment + se_enrichment), color="black", alpha = 0.3, width=0.03) +  
   geom_point() + geom_line() +
   scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
                      labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
-                     limits=10^(c(-5.2,1.6))) +
-  scale_x_continuous(trans = log_trans(base=10),
+                     limits=10^(c(-5.2,2))) +
+  scale_x_continuous(trans = log_trans(base=2),
                      breaks = c(12.5, 25, 50, 100)) +
-  
   labs(
     x = "Rifampicin Concentration\n(µg/mL)",
     y = "log10 Enrichment",
-    color = "Log10 Enrichment\nacross\nconcentrations") + 
+    color = "") + 
   geom_hline(yintercept=1, linetype=2) +
   #scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
-  scale_colour_gradient(low = "red", high = "blue") +
+  scale_colour_manual(values = color_vals_D[1:2]) +
+  scale_fill_manual(values = color_vals_D[1:2]) +
 #  na.value = "grey50", guide = "colourbar", aesthetics = "colour") +
   theme_linedraw() +
   theme(text = element_text(size=fig_font_size)) +
@@ -368,12 +402,12 @@ fig2d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rp
     strip.text=element_text(color='black'), 
     axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
     panel.border=element_blank(),
-    axis.line=element_line() )#,
-    #legend.position = 'none') 
+    axis.line=element_line(),
+    legend.position = 'none') 
 
 fig2d
 
-ggsave(here::here('fig2d.pdf'), plot=fig2d, width=5, height=3, units='in', dpi=300)
+#ggsave(here::here('fig2d.pdf'), plot=fig2d, width=5, height=3, units='in', dpi=300)
 
 ```
 
