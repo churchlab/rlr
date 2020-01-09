@@ -25,25 +25,28 @@ library(ggrepel)
 #for reading sam files
 library(Rsamtools) # first: BiocManager::install("Rsamtools")
 
-
-#parent_folder = "/Users/Max_Schubert/dropbox_hms/active_seq_reads/NovNextseq_again/FC_04398/Unaligned_1234_PF_mm1/Data/sam_without_pear/" #temporary, will relocate to git here::here('fig_4x'
-
+#for unzipping tlen files
+library(R.utils) # first install.packages('R.utils')
 
 parent_folder = here::here('supplemental_figures/fig_S6A/')
 source(here::here('constants.R'))
 ```
 
+
+```{r unzip_tlen_files}
+gunzip_tlen <- function(x){
+  gunzip(paste(parent_folder, 'S',
+               as.character(x), '_tlen.gz', sep = ""), remove = FALSE)
+}
+
+gunzip_tlen(1)
+gunzip_tlen(2)
+gunzip_tlen(3)
+```
+
 ### here's the code for the "tlen" column of a sam/bam file
 ##### there are two rows for each read pair, need to be filtered down to one by removing tlen less than zero
-
 ```{r}
-#sample = "S1"
-
-#sample_path = paste(parent_folder, sample, const, sep = "")
-#lens = data.table(fread(sample_path))
-#pos_lens <- lens[ V1 > 0]
-#filter_lens <- pos_lens[V1 < 400]
-
 const = "_tlen"
 mk_lens_table <- function(x,...){
   sample_path = paste(parent_folder, x, const, sep = "")
@@ -87,6 +90,20 @@ fig_s6A_lengths
 ggsave('supplemental_figures/fig_s6A_lengths.pdf', plot=fig_s6A_lengths, width=4, height=3, units='in', dpi=300, useDingbats = FALSE)
 
 ```
+
+#optional: get rid of unzipped tlen files
+```{r delete_unzipped_tlen_files}
+remove_tlen <- function(x){
+  tlen_name = paste(parent_folder, 'S',
+               as.character(x), '_tlen', sep = "")
+  file.remove(tlen_name)
+}
+
+remove_tlen(1)
+remove_tlen(2)
+remove_tlen(3)
+```
+
 
 
 ###cruft below
