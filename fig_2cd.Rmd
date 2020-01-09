@@ -39,7 +39,7 @@ liblistpath <- paste(parent_folder,"b26_TC_metadata.csv", sep = "/" )
 liblistdt <- data.table(fread(liblistpath))
 
 #### get donors, merge to create annotated table
-allelelistpath <- paste(parent_folder,"allele_annotated_list_UPDATE_2.csv", sep = "/" )
+allelelistpath <- paste(parent_folder,"allele_annotated_list.csv", sep = "/" )
 seq_annot_dt <- data.table(fread(allelelistpath))
 seq_annot_dt[, bc_read := prodonor_seq]
 
@@ -79,7 +79,7 @@ liblistdt2[,SampleNum := as.character(SampleNum)]
 #liblistdt2[,samplenum:= NULL]
 
 
-allelelistpath <- paste(parent_folder,"allele_annotated_list_UPDATE_2.csv", sep = "/" )
+allelelistpath <- paste(parent_folder,"allele_annotated_list.csv", sep = "/" )
 seq_annot_dt <- data.table(fread(allelelistpath))
 seq_annot_dt[, bc_read := prodonor_seq]
 
@@ -99,7 +99,7 @@ pct_annot = as.character(pct_annot)
 
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
-            100*pct_annot, "%", sep = " "))
+            100*as.numeric(pct_annot), "%", sep = " "))
 ```
 
 ```{r add new data for timepoint 1 to old}
@@ -116,7 +116,7 @@ before = both_before
 ```
 
 ```{r segment}
-#make versions of "before" data assigned to each value of rif, so i can segment on rif?
+#make versions of "before" data assigned to each value of rif, so i can segment on rif
 before12.5 = before
 before12.5$rif = 12.5
 before25 = before
@@ -173,7 +173,6 @@ binary_summ <- into_summ[,
                           max_enrichment = max(enrichment.post.rif),
                           logmean_enrichment = 10^mean(log10(enrichment.post.rif)),
                           logsd_enrichment = sd(log10(enrichment.post.rif)),
-                          iqr_enrichment = IQR(enrichment.post.rif),
                           sd_freq = sd(seq_freq),
                           se_freq = sd(seq_freq) / sqrt(.N),
                           sd_enrichment= sd(enrichment.post.rif),
@@ -185,79 +184,21 @@ binary_summ <- into_summ[,
 
 ```
 
-# plot in groups
-```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
+#prepare supplemental table 1A, list of figure 2C results for all alleles
+```{r rif_allele_summary_supp}
+output_table_1A <- binary_summ[rif == 12.5]
+output_table_1A[, c("rpoB allele type", "mut_class", #color_cat
+                 "Count", "N", "mean_seq_freq", "median_seq_freq",
+                 "median_enrichment", "max_enrichment","logmean_enrichment", 
+                 "sd_freq", "se_freq", "sd_enrichment","color_cat",
+                 "log_se_enrichment", "aa_position", "aa_ref", "aa_alt", "rif"):=NULL]
 
-color_vals = c('#00BA38', #green
-               '#619CCF', #dark blue
-               '#F564E3', #purple
-               '#F8766D', #red
-               '#B79F00') #gold
+#rank highest to lowest by mean enrichment
+setorder(output_table_1A, 'mean_enrichment')
 
-addline_format <- function(x,...){gsub(' ','\n',x)}
-
-current = binary_summ[rif == 12.5] #rif concentration for binary plot here
-
-current[, mut_class := factor(
-  mut_class,
-  levels=unique(mut_class)[c(1,2,3,4,6,5)],
-  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
-  
-# lower limit, unfilled/filled
-current_combine_lethal = copy(current)
-current_combine_lethal[mut_class == 'Deleterious', mut_class := 'Lethal']
-current_combine_lethal[mut_class == 'Lethal', mut_class := 'Lethal/Deleterious']
-current_combine_lethal[mut_class == 'Lethal/Deleterious', color_cat := 2]
-current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(7,3:6)])]
-
-fig2c <- ggplot(current_combine_lethal, aes(
-    x=reorder(nickname,logmean_enrichment), 
-    y=pmax(1e-4, logmean_enrichment), 
-    color= as.factor(color_cat),
-    fill= as.factor(color_cat))) + 
-  geom_linerange(aes(
-    ymin=pmax(1e-4,logmean_enrichment-iqr_enrichment), 
-    ymax=pmax(1e-4,logmean_enrichment+iqr_enrichment)),
-    color="black", 
-    alpha = 0.3) +  
-  geom_point(data=current_combine_lethal[number_undetected == 0], size = 2, shape=21) +
-  geom_point(data=current_combine_lethal, size = 2, shape=21, fill=NA) +
-  geom_text(data=current_combine_lethal[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
-  geom_point(data=current_combine_lethal[number_undetected == 3], size = 2, shape=21, fill='white') +
-  scale_colour_manual(values = color_vals[1:5]) +
-  scale_fill_manual(values = color_vals[1:5]) +
-  scale_y_continuous(
-    trans = log_trans(base=10),
-    breaks = c(.001, .01, .1, 1, 10, 100),
-    labels = c('\u2265 -3', log10(c(.01, .1, 1, 10, 100))),
-    limits=10^(c(-4.2,1.6)),
-    expand=c(-0.01,0)) +
-  scale_x_discrete(expand=c(0.16,0.16)) +
-  facet_grid(~mut_class, scales='free_x', space='free_x', switch='both') +
-  labs(
-    x = "Allele",
-    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
-    color = "Allele type") + 
-  theme_linedraw() +
-  geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=fig_font_size)) +
-  theme(
-    axis.text.x= element_blank(),
-    axis.ticks.x=element_blank(),
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    panel.spacing=unit(0,'pt'),
-    panel.border=element_blank(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    axis.line=element_line(),
-    legend.position = 'none')
-
-fig2c
-
-#ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
-
-ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
+#output table
+output_to = paste(here::here(), 'supplemental_materials', 'supplemental_table_1A.csv', sep = "/")
+fwrite(output_table_1A,output_to)
 
 ```
 
@@ -350,6 +291,26 @@ ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300,
 
 ```
 
+#prepare supplemental table 1B, list of figure 2CD results for rif alleles
+```{r rif_allele_summary_supp}
+output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
+                                             "rpoB Allele, unknown effect")]
+output_table[, c("rpoB allele type", "mut_class", #color_cat
+                 "Count", "N", "mean_seq_freq", "median_seq_freq",
+                 "median_enrichment", "max_enrichment",
+                 "min_enrichment", "logmean_enrichment", 
+                 "sd_freq", "se_freq", "sd_enrichment",
+                 "log_se_enrichment", "aa_position", "aa_ref", "aa_alt"):=NULL]
+
+#rank highest to lowest by mean enrichment
+output_table[,rank_per_conc := rank(-mean_enrichment), by = "rif"]
+output_to = paste(parent_folder, 'rif_binary_out.csv', sep = "/")
+fwrite(output_table,output_to)
+
+#output all alleles
+unique(binary_summ$nickname)
+
+
 
 #prepare supplemental table 1B, list of figure 2CD results for rif alleles
 ```{r rif_allele_summary_supp}
@@ -412,8 +373,82 @@ fig2d
 ```
 
 
-########
+######## cruft to be deleted...
+# older version of 2c plot
+```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
 
+color_vals = c('#00BA38', #green
+               '#619CCF', #dark blue
+               '#F564E3', #purple
+               '#F8766D', #red
+               '#B79F00') #gold
+
+addline_format <- function(x,...){gsub(' ','\n',x)}
+
+current = binary_summ[rif == 12.5] #rif concentration for binary plot here
+
+current[, mut_class := factor(
+  mut_class,
+  levels=unique(mut_class)[c(1,2,3,4,6,5)],
+  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
+  
+# lower limit, unfilled/filled
+current_combine_lethal = copy(current)
+current_combine_lethal[mut_class == 'Deleterious', mut_class := 'Lethal']
+current_combine_lethal[mut_class == 'Lethal', mut_class := 'Lethal/Deleterious']
+current_combine_lethal[mut_class == 'Lethal/Deleterious', color_cat := 2]
+current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(7,3:6)])]
+
+fig2c <- ggplot(current_combine_lethal, aes(
+    x=reorder(nickname,logmean_enrichment), 
+    y=pmax(1e-4, logmean_enrichment), 
+    color= as.factor(color_cat),
+    fill= as.factor(color_cat))) + 
+  geom_linerange(aes(
+    ymin=pmax(1e-4,logmean_enrichment-iqr_enrichment), 
+    ymax=pmax(1e-4,logmean_enrichment+iqr_enrichment)),
+    color="black", 
+    alpha = 0.3) +  
+  geom_point(data=current_combine_lethal[number_undetected == 0], size = 2, shape=21) +
+  geom_point(data=current_combine_lethal, size = 2, shape=21, fill=NA) +
+  geom_text(data=current_combine_lethal[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
+  geom_point(data=current_combine_lethal[number_undetected == 3], size = 2, shape=21, fill='white') +
+  scale_colour_manual(values = color_vals[1:5]) +
+  scale_fill_manual(values = color_vals[1:5]) +
+  scale_y_continuous(
+    trans = log_trans(base=10),
+    breaks = c(.001, .01, .1, 1, 10, 100),
+    labels = c('\u2265 -3', log10(c(.01, .1, 1, 10, 100))),
+    limits=10^(c(-4.2,1.6)),
+    expand=c(-0.01,0)) +
+  scale_x_discrete(expand=c(0.16,0.16)) +
+  facet_grid(~mut_class, scales='free_x', space='free_x', switch='both') +
+  labs(
+    x = "Allele",
+    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
+    color = "Allele type") + 
+  theme_linedraw() +
+  geom_hline(yintercept=1, linetype=2) +
+  theme(text = element_text(size=fig_font_size)) +
+  theme(
+    axis.text.x= element_blank(),
+    axis.ticks.x=element_blank(),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    panel.spacing=unit(0,'pt'),
+    panel.border=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
+
+fig2c
+
+#ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
+
+ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
+
+```
 
 ######### deprecated: plotting both as one panel
 
