@@ -52,6 +52,20 @@ SNP_file_trimmed_dt = SNP_file_dt[,c( "UID", "POSITION",
 
 ```
 
+#unzip coverage files
+```{r unzip coverage files}
+gunzip_dp <- function(x){
+  dp_name = paste(parent_folder, '/', 's',
+               as.character(x), '_depths.gz', sep = "")
+  #print(dp_name)
+  gunzip(dp_name, remove = FALSE)
+}
+
+gunzip_dp(4)
+```
+
+
+
 ```{r before_coverage_data}
 #note, could add more samples later
 samplenum = 's4'
@@ -130,6 +144,19 @@ all_polar_plot
 
 ggsave('fig_4B.pdf', plot=all_polar_plot, width=4, height=4, units='in', dpi=300, useDingbats = FALSE)
 ```
+
+
+#optional: get rid of unzipped dp files
+```{r delete_unzipped_tlen_files}
+remove_dp <- function(x){
+  dp_name = paste(parent_folder,'/','s', as.character(x),
+                  '_depths', sep = "")
+  file.remove(dp_name)
+}
+
+remove_dp(4)
+```
+
 
 
 
