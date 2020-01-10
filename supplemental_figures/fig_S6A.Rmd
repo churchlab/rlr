@@ -35,8 +35,9 @@ source(here::here('constants.R'))
 
 ```{r unzip_tlen_files}
 gunzip_tlen <- function(x){
-  gunzip(paste(parent_folder, 'S',
-               as.character(x), '_tlen.gz', sep = ""), remove = FALSE)
+  tlen_name = paste(parent_folder, 'S',
+               as.character(x), '_tlen.gz', sep = "")
+  gunzip(tlen_name, remove = FALSE)
 }
 
 gunzip_tlen(1)
@@ -93,15 +94,13 @@ ggsave('supplemental_figures/fig_s6A_lengths.pdf', plot=fig_s6A_lengths, width=4
 
 #optional: get rid of unzipped tlen files
 ```{r delete_unzipped_tlen_files}
-remove_tlen <- function(x){
-  tlen_name = paste(parent_folder, 'S',
-               as.character(x), '_tlen', sep = "")
-  file.remove(tlen_name)
+remove_dp <- function(x){
+  dp_name = paste(parent_folder,'/','s', as.character(x),
+                  '_uniq_dp', sep = "")
+  file.remove(dp_name)
 }
 
-remove_tlen(1)
-remove_tlen(2)
-remove_tlen(3)
+remove_dp(2)
 ```
 
 

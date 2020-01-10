@@ -35,6 +35,18 @@ genome_size = 4641652
 
 #background
 ### this communicates that the whole genome is covered, and that coverage is decently even
+```{r unzip_dp_data}
+gunzip_dp <- function(x){
+  dp_name = paste(parent_folder,'/','s', as.character(x),
+                  '_uniq_dp.gz', sep = "")
+  #print(dp_name)
+  gunzip(dp_name, remove = FALSE)
+}
+
+gunzip_dp(2)
+```
+
+
 ```{r before_coverage_data}
 #s2 data as 4C
 file_name = 's2_uniq_dp'
@@ -99,6 +111,19 @@ before_cov_plot_dots
 ggsave('supplemental_figures/fig_S6B.pdf', plot=before_cov_plot_dots, width=5, height=2, units='in', dpi=300, useDingbats = FALSE)
 ```
 
+
+#optional: delete un-zipped dp data:
+```{r delete_unzipped_dp}
+remove_dp <- function(x){
+  dp_name = paste(parent_folder, 'S',
+               as.character(x), '_tlen', sep = "")
+  file.remove(tlen_name)
+}
+
+remove_tlen(1)
+remove_tlen(2)
+remove_tlen(3)
+```
 
 
 
