@@ -1,5 +1,5 @@
 ---
-title: "Fig1C"
+title: "Fig_2B"
 author: "Max Schubert"
 date: "6/18/2019"
 output: html_document
@@ -50,12 +50,12 @@ addline_format <- function(x,...){
 
 
 
-# fig1B, editing across genotypes
+# fig2B, editing across genotypes
 
 ```{r fig1_load_data_and_metadata}
 #from b22 analysis
-fig1b_dir = "fig_1b"
-current_folder <- paste(parent_folder, fig1b_dir, sep = '/')
+fig2b_dir = "fig_2B"
+current_folder <- paste(parent_folder, fig2b_dir, sep = '/')
 
 #read in data
 edit_data_file = paste(current_folder,"b18b19b23_edit_mergedbins", sep = "/")
