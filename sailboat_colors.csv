@@ -1,8 +1,0 @@
-color hex,desc,application
-#6e7cb9,red,"fig1 rpoB, fig2 known rif resistance, fig 3 known rif resistance, fig4B output SNPS, fig4C replicate one"
-#7bbcd5,orange,"fig 2 lethal alleles, fig4C replicate 2"
-#d0e2af,yellow,fig 2 clinically observed rpoB alleles
-#f5db99,green,"fig2,3 neutral alleles"
-#e89c81,lightblue,"fig1 gyrA, fig 2 unrelated resistance"
-#d2848d,darkblue,fig 2 deleterious alleles
-#708090,slategrey,"fig4, genomic input"

@@ -21,6 +21,7 @@ library(ggpubr)
 library(plotly)
 #dan's suggestion for plotting:
 library(ggrepel)
+library(R.utils)
 
 parent_folder = here::here('/supplemental_figures/fig_S6B')
 source(here::here('constants.R'))
@@ -56,7 +57,7 @@ cov <- fread(path_cov)
 names(cov) <- c('chr','pos','count')
 
 #slice into windows, label window as middle base of window
-window_size <- 1000
+window_size <- 500
 cov[, window := cut(pos,
                     breaks=c(seq(0, max(pos), window_size),
                              max(pos)),
@@ -125,7 +126,27 @@ remove_tlen(2)
 remove_tlen(3)
 ```
 
+#optional: investigation of regions with zero coverage
+### set up for supplemental table 3
+```{r pull_zero_coverage_regions}
 
+no_coverage_windows = wcov_new[mean_window_count == 0]
+
+#output table
+output_to = paste(parent_folder, 'zero_coverage_regions_output.csv', sep = "/")
+fwrite(no_coverage_windows,output_to)
+
+```
+###set up for supplemental table 4
+```{r pull_high_coverage_regions}
+
+high_coverage_windows = wcov_new[mean_window_count > 225]
+
+#output table
+output_to = paste(parent_folder, 'high_coverage_regions_output.csv', sep = "/")
+fwrite(high_coverage_windows,output_to)
+
+```
 
 
 ### cruft below

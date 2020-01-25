@@ -78,7 +78,6 @@ melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
 #saveRDS(melt_with_fedit, file = paste(analysis_dir,save_to, sep = '/'))
 
 ```
-
 ```{r keep track of reads}
 
 total_counts_merged = sum(melt_with_annot_nozero$Count)
@@ -91,31 +90,79 @@ print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of
 ```
 
 
-```{r h10_redo}
-h10 <- melt_with_fedit
+### append data from "H7" experiment in supp fig S3A showing results for cspRecT, for inclusion here. also plotted in 2B
+```{r get_h7_data}
+h7_scrubbed = readRDS(file = "h7data")
+h7_triple <- h7_scrubbed[genotype == "sbcB-, recJ-, mutS-" ]
+h7_triple$genotype = "∆mutS, ∆recJ, ∆sbcB, + CspRecT"
+h7_triple$label = ""
 
-fig_1D <- ggplot(h10, aes(x= locus, y=fraction_edited, color=locus)) + 
-  #geom_jitter(width = 0.4, size = 3, alpha = 0.7) +
-  geom_beeswarm(size = 4, priority = "random", cex = 3,
+#combine data
+h10 <- melt_with_fedit
+h10$label = "TAG > TAA replacement, by gene"
+fig2d_rbind = rbind(h7_triple, h10, fill = TRUE)
+
+#summarize data, for visualizing mean efficiency across loci
+fig2d_mean_editing_by_locus <- fig2d_rbind[,
+                        list(
+                          mean_fraction_edited = mean(fraction_edited)
+                          ), by=c("locus")]
+#export these means, for use in supplemental figure 5B
+savesummto = paste(here::here(),"supplemental_figures","fig_s5","2D_summ.rds", sep = "/")
+saveRDS(fig2d_mean_editing_by_locus, file = savesummto)
+```
+
+
+#plotting for figure 2D
+```{r set_up_plot}
+mean_locus_editing = mean(fig2d_mean_editing_by_locus$mean_fraction_edited)
+
+color_list = c('#F8766D','#00B4F0','#FF64B0',
+               '#DE8C00','#00BA38','#619CFF',
+               '#B79F00','#00C08B','#C77CFF',
+               '#7CAE00','#00BFC4','#F564E3')
+
+fig2d_rbind$locus = as.factor(fig2d_rbind$locus)
+fig2d_rbind[, locus_recolor := factor(
+  locus,
+  levels=unique(locus)[c(4,11,1,2,3,5,6,7,8,9,10,12)])]
+
+color_2d <- c('gyrA' = '#F8766D', 'rpoB' = '#00B4F0',
+              'sucB' = '#FF64B0',
+               'mreC' = '#DE8C00', 'murF' = '#00BA38', 'lolA' = '#619CFF',
+               'lpxK' = '#B79F00','fabH' = '#00C08B','hemA' = '#C77CFF',
+               'fliN' = '#7CAE00','hda' = '#00BFC4','coaD' = '#F564E3')
+
+####
+mean_locus_editing = mean(fig2d_mean_editing_by_locus$mean_fraction_edited)
+
+```
+
+
+```{r h10_redo}
+fig_1D <- ggplot(fig2d_rbind, aes(x= locus, y=fraction_edited, color=locus)) + 
+  geom_beeswarm(size = 4, priority = "random", cex = 4,
                 alpha = 0.7, stroke = 0) +
-  #geom_boxplot(alpha = 0.3, outlier.shape = NA) +
-  geom_hline(yintercept=mean(h10$fraction_edited), linetype=2, size=0.5) +
+  
+  geom_hline(yintercept=mean_locus_editing, linetype=2, size=0.5) +
   theme_linedraw() +
   coord_cartesian(ylim=c(.5, .95)) +
   scale_y_continuous(breaks = c(.5, .6, .7, .8, .9),
-                     labels = c("50%", "60%", "70%", "80%", "90%")) +
-  #theme(text = element_text(size=fig_font_size)) +
+                     labels = c("50%","60%", "70%", "80%", "90%")) +
   labs(
-    x = "TAG > TAA replacement, by gene",
     y = "Fraction Edited") +
+  facet_grid(~label, scales = 'free_x', space = 'free_x',
+             switch = 'both') + #scales='free_x'
+  scale_colour_manual(values = color_2d) +
   theme(
     axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,
                                size = fig_font_size),
     axis.text.y = element_text(size = fig_font_size),
-    axis.title = element_text(size = fig_title_font_size),
+    axis.title.y = element_text(size = fig_title_font_size),
+    axis.title.x = element_blank(),
     strip.background=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    panel.grid.minor.y=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
     panel.border=element_blank(),
     axis.line=element_line(),
     legend.position = 'none')
@@ -123,15 +170,8 @@ fig_1D <- ggplot(h10, aes(x= locus, y=fraction_edited, color=locus)) +
 fig_1D
 
 ggsave(here::here('fig_2D.pdf'), plot=fig_1D, width=figure_width*(3/5), 
-       height=figure_height*(1/3), units='in', dpi=300)
+       height=figure_height*(1/3), units='in', dpi=300, device = cairo_pdf)
 #ggplotly()
 ```
 
-
-### output data for analysis in supplemental material
-
-```{r output_edited_fraction}
-h10
-
-```
 
