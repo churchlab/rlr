@@ -1,0 +1,138 @@
+---
+title: "Fig_S1D"
+author: "Max Schubert"
+date: "1/25/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+params:
+  encoding: UTF-8
+  warning: FALSE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+pdf.options(encoding = "CP1250")
+
+library(data.table)
+library(stringr)
+library(plyr)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(here)
+library(ggpubr)
+
+
+parent_folder <- here::here("supplemental_figures/fig_S1D")
+source(here::here('constants.R'))
+```
+
+# fig_s1D
+```{r get_data}
+#this is the file with minimum counts 20
+mergebinpath <- paste(parent_folder, "ev1_edit_merged_bins", sep = "/")
+merged_bins.dt <- data.table(fread(mergebinpath))
+mergemelt.dt <- melt(merged_bins.dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+
+mergemelt.dt[, sample_ID := str_replace_all(Sample, "_cutcount", "")]
+
+#import library annotations, trim some extraneous columns, trim some extraneous rows
+liblistpath <- paste(parent_folder, "lib_list.csv", sep = "/")
+liblistdt <- data.table(fread(liblistpath))
+
+liblistdt[, c("id",
+              "column",
+              "row"):=NULL]
+
+annotated_megatable <- liblistdt[mergemelt.dt, on = "sample_ID", nomatch = 0]
+
+
+#read in edit seqs (ref, alt)
+refaltpath <- paste(parent_folder, "adapters_map.csv", sep = "/")
+refalt_dt <- data.table(fread(refaltpath))
+
+refalt_dt[, c("5prime_cutadapt",
+              "3prime_cutadapt",
+              "5prime_edit",
+              "3prime_edit"):=NULL]
+#merge ref and alt to table
+#for now, using expt_set, though in the future something more complex should be used
+seq_annotated_megatable <- annotated_megatable[refalt_dt, on = "expt_set", nomatch = 0]
+
+```
+
+```{r calc_editing}
+#establishes control sample and normalizes to this, prints into "ratio", kill singletons
+seq_annotated_megatable[, is_ref := (bc_read == ref)]
+seq_annotated_megatable[, is_alt := (bc_read == alt)]
+
+edited_frac <- seq_annotated_megatable[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample'][is_ref == TRUE]
+
+```
+
+#plot supp1D
+###set up plot
+```{r set up plot}
+######
+currenttable = edited_frac[expt_set == "ev_gyr"] #set experiment to view
+
+#load table of timepoint ~ hours, merge hours to current table
+hours_path <-  paste(parent_folder, "timepoint_hours.csv", sep = "/")
+hours.dt <- data.table(fread(hours_path))
+current_table_hours <- currenttable[hours.dt, on = "timepoint", nomatch = 0]
+
+#define means
+summary <- current_table_hours[,
+                        list(
+                          Count = Count,
+                          N= .N,
+                          fraction_edited= mean(fraction_edited),
+                          sd= sd(fraction_edited),
+                          se= sd(fraction_edited) / sqrt(.N)),
+                        by=c("timepoint", "hours")]
+
+#hline
+horiz_val <- current_table_hours[hours >= 49, mean(fraction_edited)]
+horiz_txt <- paste0(format(horiz_val*100, digits=2), '% edited')
+
+#annotation
+genotype_txt = "∆mutS\n∆sbcB\n∆recJ\nBeta"
+```
+
+```{r plot_s1D}
+#plot, tall skinny version for figure 1
+fig_S1D <- ggplot(current_table_hours, aes(x=hours, y=fraction_edited, color = "#F8766D")) + 
+  geom_line(data = summary, aes(x = hours, y= fraction_edited, alpha = .3)) +
+  geom_jitter(width = 0.5,  size = 3) +
+  scale_y_continuous(breaks = c(.00, .25, .5, .75, 1), labels=scales::percent) +
+  scale_x_continuous(breaks = c(0, 24, 48, 72)) +
+  labs(
+    x = "Time (Hours)",
+    y = "Percent Edited") +
+  geom_hline(yintercept=horiz_val, linetype=2) +
+  annotate(geom='text', y=horiz_val, x=10, label=horiz_txt, vjust=-0.5, hjust=0, size=fig_font_size*0.3) +
+  annotate(geom='text', y=.2, x=60, label=genotype_txt, size=fig_font_size*0.3) +
+  theme_linedraw() +
+  theme(
+    text = element_text(size=fig_font_size),
+    strip.background=element_blank(), strip.placement='outside',
+    strip.text=element_text(color='black'), 
+    axis.title.x=element_text(margin = margin(fig_title_font_size,0,0,0, "pt")), 
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+    legend.position = 'none') 
+
+fig_S1D
+```  
+```{r save_supp1D}
+ggsave(paste(parent_folder, 'fig_S1D.pdf', sep = "/"),
+  plot=fig_S1D, width=2.5, height=3.5, units='in',
+  dpi=300, device = cairo_pdf)
+```
