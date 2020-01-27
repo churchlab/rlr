@@ -1,138 +1,123 @@
 ---
 title: "Fig_S1D"
 author: "Max Schubert"
-date: "1/25/2020"
+date: "8/12/2019"
 output: html_document
 editor_options: 
   chunk_output_type: console
-params:
-  encoding: UTF-8
-  warning: FALSE
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
-pdf.options(encoding = "CP1250")
 
+```{r setup}
 library(data.table)
 library(stringr)
-library(plyr)
+#library(plyr)
 require(ggplot2)
 require(data.table)
 require(scales)
-library(cowplot)
-library(grid)
-library(gridExtra)
+#library(cowplot)
+#library(grid)
+#library(gridExtra)
 library(here)
-library(ggpubr)
 
+parent_folder <- here::here()
 
-parent_folder <- here::here("supplemental_figures/fig_S1D")
 source(here::here('constants.R'))
 ```
 
-# fig_s1D
-```{r get_data}
-#this is the file with minimum counts 20
-mergebinpath <- paste(parent_folder, "ev1_edit_merged_bins", sep = "/")
-merged_bins.dt <- data.table(fread(mergebinpath))
-mergemelt.dt <- melt(merged_bins.dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+#load and process data. These steps identical to fig1B analysis
 
-mergemelt.dt[, sample_ID := str_replace_all(Sample, "_cutcount", "")]
+```{r load_data_and_metadata}
+fig2c_dir = "fig_2B"
+current_folder <- paste(parent_folder, fig2c_dir, sep = '/')
 
-#import library annotations, trim some extraneous columns, trim some extraneous rows
-liblistpath <- paste(parent_folder, "lib_list.csv", sep = "/")
-liblistdt <- data.table(fread(liblistpath))
+#read in data
+edit_data_file = paste(current_folder,"b18b19b23_edit_mergedbins", sep = "/")
+edit_data_dt <- data.table(fread(edit_data_file))
+edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+#make new col Sample_num for merging to manifest
+edit_data_melt[, Sample_num := as.numeric(str_replace_all(Sample, "_cutcount", ""))]
 
-liblistdt[, c("id",
-              "column",
-              "row"):=NULL]
+#import manifest
+#this contains the data "expt_set" and "tx" for annotating metadata!
+manifest_file = paste(current_folder, "FC_04592_1234_PF_mm1_mschubert_manifest_edited.csv", sep = "/")
+manifest_dt <- data.table(fread(manifest_file)) 
+#kill a ton of these columns
+manifest_dt = Filter(function(x)!all(is.na(x)), manifest_dt) #kills columns with all NA
+manifest_dt = manifest_dt[,c('Sample_num','expt_set','well_indexed','tx','editing_timepoint', 'control_status')] #keeps only specified columns
 
-annotated_megatable <- liblistdt[mergemelt.dt, on = "sample_ID", nomatch = 0]
+#merge manifest to edit_data
+melt_with_annot <- edit_data_melt[manifest_dt, on = "Sample_num", nomatch = 0]
 
+#import metadata, merge 
+tx_deets_file = paste(current_folder, 'edit_tx_map.csv', sep = "/")
+tx_deets = data.table(fread(tx_deets_file)) 
+melt_with_metadata <- melt_with_annot[tx_deets, on = c("expt_set","tx"), nomatch = 0]
 
-#read in edit seqs (ref, alt)
-refaltpath <- paste(parent_folder, "adapters_map.csv", sep = "/")
-refalt_dt <- data.table(fread(refaltpath))
-
-refalt_dt[, c("5prime_cutadapt",
-              "3prime_cutadapt",
-              "5prime_edit",
-              "3prime_edit"):=NULL]
-#merge ref and alt to table
-#for now, using expt_set, though in the future something more complex should be used
-seq_annotated_megatable <- annotated_megatable[refalt_dt, on = "expt_set", nomatch = 0]
+#import ref_alt, merge
+ref_alt_file = paste(current_folder, 'ref_alt_map.csv', sep = "/")
+ref_alt = data.table(fread(ref_alt_file)) 
+melt_with_metadata2 <- melt_with_metadata[ref_alt, on = "adapters", nomatch = 0]
 
 ```
 
-```{r calc_editing}
+```{r ref_alt}
 #establishes control sample and normalizes to this, prints into "ratio", kill singletons
-seq_annotated_megatable[, is_ref := (bc_read == ref)]
-seq_annotated_megatable[, is_alt := (bc_read == alt)]
+melt_with_metadata2[, is_ref := (bc_read == ref)]
+melt_with_metadata2[, is_alt := (bc_read == alt)]
 
-edited_frac <- seq_annotated_megatable[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample'][is_ref == TRUE]
+melt_with_fedit <- melt_with_metadata2[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_num'][is_ref == TRUE]
 
 ```
 
-#plot supp1D
-###set up plot
-```{r set up plot}
-######
-currenttable = edited_frac[expt_set == "ev_gyr"] #set experiment to view
 
-#load table of timepoint ~ hours, merge hours to current table
-hours_path <-  paste(parent_folder, "timepoint_hours.csv", sep = "/")
-hours.dt <- data.table(fread(hours_path))
-current_table_hours <- currenttable[hours.dt, on = "timepoint", nomatch = 0]
+### set up figure
+```{r plot_figs1D}
+#to make Xlabels have multiple lines, instead of comma and space:
+addline_format <- function(x,...){
+  gsub(', ','\n',x)
+}
 
-#define means
-summary <- current_table_hours[,
-                        list(
-                          Count = Count,
-                          N= .N,
-                          fraction_edited= mean(fraction_edited),
-                          sd= sd(fraction_edited),
-                          se= sd(fraction_edited) / sqrt(.N)),
-                        by=c("timepoint", "hours")]
+x_labels <- addline_format(c("∆recJ, ∆sbcB","∆recJ, ∆sbcB, +mutL*","∆mutS, ∆recJ, ∆sbcB","∆mutS, ∆recJ, ∆sbcB, +mutL*"))
 
-#hline
-horiz_val <- current_table_hours[hours >= 49, mean(fraction_edited)]
-horiz_txt <- paste0(format(horiz_val*100, digits=2), '% edited')
-
-#annotation
-genotype_txt = "∆mutS\n∆sbcB\n∆recJ\nBeta"
+#filter for fig1E data
+b19 <- melt_with_fedit[expt_set == 'b19']
+#show first timepoint
+b19 <- b19[editing_timepoint == 1]
 ```
-
-```{r plot_s1D}
-#plot, tall skinny version for figure 1
-fig_S1D <- ggplot(current_table_hours, aes(x=hours, y=fraction_edited, color = "#F8766D")) + 
-  geom_line(data = summary, aes(x = hours, y= fraction_edited, alpha = .3)) +
-  geom_jitter(width = 0.5,  size = 3) +
-  scale_y_continuous(breaks = c(.00, .25, .5, .75, 1), labels=scales::percent) +
-  scale_x_continuous(breaks = c(0, 24, 48, 72)) +
-  labs(
-    x = "Time (Hours)",
-    y = "Percent Edited") +
-  geom_hline(yintercept=horiz_val, linetype=2) +
-  annotate(geom='text', y=horiz_val, x=10, label=horiz_txt, vjust=-0.5, hjust=0, size=fig_font_size*0.3) +
-  annotate(geom='text', y=.2, x=60, label=genotype_txt, size=fig_font_size*0.3) +
+```{r plot_s1d}
+fig_S1D <- ggplot(b19, aes(x=interaction(plas_desc, strain_genotype), y=fraction_edited,  color = adapters)) + 
+  geom_jitter(width = 0.25, height = 0.01, size = 3,
+              alpha = 0.7, stroke = 0) +
   theme_linedraw() +
-  theme(
-    text = element_text(size=fig_font_size),
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    axis.title.x=element_text(margin = margin(fig_title_font_size,0,0,0, "pt")), 
-    panel.border=element_blank(),
-    axis.line=element_line(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    panel.grid.minor.y=element_blank(),
-    legend.position = 'none') 
+  scale_y_continuous(breaks = c(0.01, .1, .50, 1),
+                     limits = c(0.01,1),
+                     labels = c('1%', '10%', '50%', '100%'),
+                     trans = log10_trans()) +
+  theme(axis.text.x = element_blank(),
+        axis.title.y = element_text(size = fig_title_font_size),
+        axis.text.y = element_text(size = fig_font_size),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        legend.position = c(0.75, 0.2),
+        legend.title = element_blank(),
+        legend.box = "vertical",
+        legend.direction = "vertical") +
+  #rotate_x_text(angle = 45) + 
+  labs(
+    x = "",
+    y = "Fraction Edited",
+    color = "Locus") +
+  scale_x_discrete(labels = x_labels)
 
 fig_S1D
-```  
-```{r save_supp1D}
-ggsave(paste(parent_folder, 'fig_S1D.pdf', sep = "/"),
-  plot=fig_S1D, width=2.5, height=3.5, units='in',
-  dpi=300, device = cairo_pdf)
 ```
+
+```{r save_plot}
+ggsave(here::here('supplemental_figures/fig_S1D_test.pdf'), plot=fig_S1D, width=3, 
+       height=2.5, units='in', dpi=300, device = cairo_pdf)
+```
+
+

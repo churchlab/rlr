@@ -117,10 +117,6 @@ saveRDS(fig2d_mean_editing_by_locus, file = savesummto)
 ```{r set_up_plot}
 mean_locus_editing = mean(fig2d_mean_editing_by_locus$mean_fraction_edited)
 
-color_list = c('#F8766D','#00B4F0','#FF64B0',
-               '#DE8C00','#00BA38','#619CFF',
-               '#B79F00','#00C08B','#C77CFF',
-               '#7CAE00','#00BFC4','#F564E3')
 
 fig2d_rbind$locus = as.factor(fig2d_rbind$locus)
 fig2d_rbind[, locus_recolor := factor(
