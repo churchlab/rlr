@@ -177,9 +177,10 @@ ggsave(here::here('fig_2E_out.pdf'), plot=fig_2E,
 
 
 ####
-#figure 1C
+#figure xx
+##### moving this to supplemental
 ```{r examine_turbidostat_data_more_closely}
-fig2C <- ggplot(NULL)+
+figS5B <- ggplot(NULL)+
   geom_line(data = edited_fractions_ev_tidy_annotated,
             aes(x = hours, y= fraction_edited,
                  color = '#F8766D', group = ev_vial),
@@ -208,7 +209,7 @@ fig2C <- ggplot(NULL)+
     axis.line=element_line(),
     legend.position = "none")
 
-fig2C
+figS5B
 
 ```
 ```{r save_1C}
@@ -219,20 +220,81 @@ ggsave(here::here('fig_2C_testagain.pdf'), plot=fig2C,
 ```
 
 
-
-
-#supplemental figure 5B
+#figure 2C
+##new version, separating vials with shape
 ```{r examine_turbidostat_data_with_generations}
-fig_S5B <- ggplot(NULL)+
+color_set = c('observed' = '#F8766D', "simulated" =  "#000000")
+sim_data$color = "simulated"
+edited_fractions_ev_tidy_annotated$color = 'observed'
+
+shape_set = c("3" = 15, "7" = 16,
+                 "11"= 17, "15" = 18)
+
+
+fig_2C <- ggplot(NULL)+
+  geom_line(data = sim_data[r == 0.05],
+            aes(x = generations, y= fraction_edited,
+                 color = color), size = 1, alpha = 0.7, linetype = "dashed") +
+  geom_point(data = edited_fractions_ev_tidy_annotated,
+             aes(x = generations_annotated, y= fraction_edited,
+                 color = color, shape = as.factor(ev_vial)),
+             size = 3, alpha = 0.8, stroke = 1) +
+  
+  theme_linedraw() +
+  scale_y_continuous(breaks = c(0, .25, .5, .75, 1),
+                     labels = c("0%","25%", "50%", "75%", "100%")) +
+  scale_x_continuous(breaks = c(0, 20, 40, 60, 80, 100)) +
+  scale_color_manual(values = color_set) +
+  scale_shape_manual(values = shape_set) +
+  labs(
+    y = "Fraction Edited",
+    x = "Generations",
+    color = "Replicate") +
+  theme(
+    axis.text.x = element_text(size = fig_font_size),
+    axis.text.y = element_text(size = fig_font_size*.9),
+    axis.title.y = element_text(size = fig_font_size*1.1),
+    axis.title.x = element_text(size = fig_font_size*1.1),
+    strip.background=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = "none")
+
+fig_2C
+```
+
+```{r save plot}
+ggsave(here::here('fig_2C_out_test.pdf'), plot=fig_2C,
+       width=2.5, height=3.3,
+       units='in', dpi=300, device = cairo_pdf)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+###### cruft below:
+```{r examine_turbidostat_data_with_generations}
+fig_2C <- ggplot(NULL)+
   #geom_line(data = edited_fractions_ev_tidy_annotated,
   #          aes(x = generations_annotated, y= fraction_edited,
   #               color = as.factor(ev_vial)), size = 1, alpha = 0.5) +
   geom_line(data = sim_data[r == 0.05],
             aes(x = generations, y= fraction_edited,
-                 color = as.factor(r)), size = 1) +
+                 color = "black"), size = 1, linetype = "dashed") +
   geom_point(data = edited_fractions_ev_tidy_annotated,
              aes(x = generations_annotated, y= fraction_edited,
-                 color = as.factor(ev_vial)), size =3, alpha = 0.7, stroke = 0) +
+                 color = '#F8766D'), size =3, alpha = 0.7, stroke = 0) +
   
   theme_linedraw() +
   scale_y_continuous(breaks = c(0, .25, .5, .75, 1),
@@ -253,15 +315,47 @@ fig_S5B <- ggplot(NULL)+
     panel.grid.major.x=element_blank(),
     panel.border=element_blank(),
     axis.line=element_line(),
-    legend.position = c(.8, .2))
+    legend.position = "none")
 
-fig_S5B
-
-```
-```{r save plot}
-ggsave(here::here('supplemental_figures/fig_s5/fig_S5B_out.pdf'), plot=fig_S5B,
-       width=3.5, height=2.6,
-       units='in', dpi=300, device = cairo_pdf)
-
+fig_2C
 ```
 
+##alternative colors
+```{r examine_turbidostat_data_with_generations}
+color_series = c("3" = "#F53224", "7" = "#F75F55",
+                 "11"= "#F98D85", "15", "$FCBBB6",
+                 "sim" = "#000000")
+
+sim_data$ev_vial = "sim"
+
+fig_2C <- ggplot(NULL)+
+  geom_line(data = sim_data[r == 0.05],
+            aes(x = generations, y= fraction_edited,
+                 color = as.factor(ev_vial)), size = 1, alpha = 0.7, linetype = "dashed") +
+  geom_point(data = edited_fractions_ev_tidy_annotated,
+             aes(x = generations_annotated, y= fraction_edited,
+                 color = as.factor(ev_vial)), size =3, alpha = 0.7, stroke = 0) +
+  
+  theme_linedraw() +
+  scale_y_continuous(breaks = c(0, .25, .5, .75, 1),
+                     labels = c("0%","25%", "50%", "75%", "100%")) +
+  scale_x_continuous(breaks = c(0, 20, 40, 60, 80, 100)) +
+  scale_color_manual(values = color_series) +
+  labs(
+    y = "Fraction Edited",
+    x = "Generations",
+    color = "Replicate") +
+  theme(
+    axis.text.x = element_text(size = fig_font_size),
+    axis.text.y = element_text(size = fig_font_size*.9),
+    axis.title.y = element_text(size = fig_font_size*1.1),
+    axis.title.x = element_text(size = fig_font_size*1.1),
+    strip.background=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = "none")
+
+fig_2C
+```

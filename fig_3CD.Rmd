@@ -262,19 +262,22 @@ fig3c <- ggplot(current_combined, aes(
     trans = log_trans(base=10),
     breaks = c(.0001, .001, .01, .1, 1, 10, 100),
     labels = c('\u2265 -4', log10(c(.001,.01,.1, 1, 10, 100))),
-    limits=10^(c(-4.2,1.6)),
+    limits=10^(c(-4.2,1.6)), 
     expand=c(-0.01,0)) +
   scale_x_discrete(expand=c(0.16,0.16)) +
   facet_grid(~mut_class, scales='free_x', switch = 'both') + #, scales='free_x', space='free_x', switch='both') +
   labs(
     x = "Allele",
-    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
+    y = "Allelic enrichment\n(log10)",
     color = "Allele type") + 
   theme_linedraw() +
   geom_hline(yintercept=1, linetype=2) +
   theme(text = element_text(size=fig_font_size)) +
   theme(
-    axis.text.x= element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(size = fig_font_size),
+    axis.title.y = element_text(size = fig_title_font_size),
+    axis.title.x = element_blank(),
     axis.ticks.x=element_blank(),
     strip.background=element_blank(), strip.placement='outside',
     strip.text=element_text(color='black'), 
@@ -283,6 +286,8 @@ fig3c <- ggplot(current_combined, aes(
     panel.grid.major.x=element_blank(),
     panel.grid.minor.x=element_blank(),
     axis.line=element_line(),
+    strip.text.x = element_text(size = fig_font_size),
+    
     legend.position = 'none')
 
 fig3c
@@ -291,7 +296,7 @@ fig3c
 ```{r save_3C}
 #ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
 
-ggsave(filename='fig_3C.pdf', plot=fig3c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
+ggsave(filename='fig_3C_new2.pdf', plot=fig3c, width=5, height=2.5, units='in', dpi=300, device=cairo_pdf)
 
 ```
 
@@ -317,13 +322,12 @@ unique(binary_summ$nickname)
 
 #setup figure 3D
 ```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
-color_vals_D = c('#F8766D', #red
-                 '#B79F00') #gold
+
 
 fig3d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rpoB_C_1576_G'], 
-    aes(x=rif, y=mean_enrichment, group=nickname, color = mut_class )) + #color=log(median_enrichment) 
-  #geom_errorbar(aes(ymin=median_enrichment - se_enrichment, ymax=median_enrichment + se_enrichment), color="black", alpha = 0.3, width=0.03) +  
-  geom_point() + geom_line() +
+    aes(x=rif, y=median_enrichment, group=nickname )) + 
+  geom_point( size = 2, alpha  = 0.7, stroke = 0) +
+  geom_line( alpha = 0.7) +
   scale_y_continuous(trans = log_trans(base=10),
                      breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
                      labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
@@ -335,16 +339,15 @@ fig3d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rp
     y = "log10 Enrichment",
     color = "") + 
   geom_hline(yintercept=1, linetype=2) +
-  #scale_colour_manual(name = "RpoB Allele Type", values = color_vals) +
-  scale_colour_manual(values = color_vals_D[1:2]) +
-  scale_fill_manual(values = color_vals_D[1:2]) +
-#  na.value = "grey50", guide = "colourbar", aesthetics = "colour") +
   theme_linedraw() +
-  theme(text = element_text(size=fig_font_size)) +
   theme(
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
+    axis.text.x = element_text(size = fig_font_size),
+    axis.text.y = element_text(size = fig_font_size),
+    axis.title.y = element_text(size = fig_title_font_size),
+    axis.title.x = element_text(size = fig_title_font_size),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
     panel.border=element_blank(),
     axis.line=element_line(),
     legend.position = 'none') 
@@ -354,7 +357,7 @@ fig3d
 
 
 ```{r save_fig3D}
-ggsave(here::here('fig_3D.pdf'), plot=fig3d, width=5, height=3, units='in', dpi=300, device = cairo_pdf)
+ggsave(here::here('fig_3D.pdf'), plot=fig3d, width=3, height=3, units='in', dpi=300, device = cairo_pdf)
 
 ```
 

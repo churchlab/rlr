@@ -1,5 +1,5 @@
 ---
-title: "Fig_S1D"
+title: "Fig_2F"
 author: "Max Schubert"
 date: "8/12/2019"
 output: html_document
@@ -11,13 +11,9 @@ editor_options:
 ```{r setup}
 library(data.table)
 library(stringr)
-#library(plyr)
 require(ggplot2)
 require(data.table)
 require(scales)
-#library(cowplot)
-#library(grid)
-#library(gridExtra)
 library(here)
 
 parent_folder <- here::here()
@@ -28,8 +24,8 @@ source(here::here('constants.R'))
 #load and process data. These steps identical to fig1B analysis
 
 ```{r load_data_and_metadata}
-fig2c_dir = "fig_2B"
-current_folder <- paste(parent_folder, fig2c_dir, sep = '/')
+fig2f_dir = "fig_2B"
+current_folder <- paste(parent_folder, fig2f_dir, sep = '/')
 
 #read in data
 edit_data_file = paste(current_folder,"b18b19b23_edit_mergedbins", sep = "/")
@@ -85,9 +81,11 @@ b19 <- melt_with_fedit[expt_set == 'b19']
 #show first timepoint
 b19 <- b19[editing_timepoint == 1]
 ```
-```{r plot_s1d}
-fig_S1D <- ggplot(b19, aes(x=interaction(plas_desc, strain_genotype), y=fraction_edited,  color = adapters)) + 
-  geom_jitter(width = 0.25, height = 0.01, size = 3,
+
+
+```{r plot_2F}
+fig_2F <- ggplot(b19, aes(x=interaction(plas_desc, strain_genotype), y=fraction_edited,  color = adapters)) + 
+  geom_jitter(width = 0.25, height = 0.1, size = 3,
               alpha = 0.7, stroke = 0) +
   theme_linedraw() +
   scale_y_continuous(breaks = c(0.01, .1, .50, 1),
@@ -112,11 +110,11 @@ fig_S1D <- ggplot(b19, aes(x=interaction(plas_desc, strain_genotype), y=fraction
     color = "Locus") +
   scale_x_discrete(labels = x_labels)
 
-fig_S1D
+fig_2F
 ```
 
 ```{r save_plot}
-ggsave(here::here('supplemental_figures/fig_S1D_test.pdf'), plot=fig_S1D, width=3, 
+ggsave(here::here('fig_2F_test.pdf'), plot=fig_2F, width=2, 
        height=2.5, units='in', dpi=300, device = cairo_pdf)
 ```
 
