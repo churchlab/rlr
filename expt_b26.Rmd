@@ -19,7 +19,8 @@ require(scales)
 library(gridExtra)
 library(plotly)
 
-parent_folder <- here::here('expt_b26')
+parent_folder <- here::here('expt_b26_evolver')
+source(here::here('constants.R'))
 ```
 
 ```{r get data}
@@ -97,7 +98,7 @@ no_rif_tc[, c("read_id",
 ## summarize the data, including no init version
 ```{r stat_summ2}
 #specify current var to summarize
-current_var = quote(seq_freq) ####
+current_var = quote(ratio_to_neutralmedian) ####
 
 noriftcsumm <- no_rif_tc[,
                         list(
@@ -153,13 +154,13 @@ ggplot(current, aes(x=time_point, y=mean_var, color=nickname)) +
 
 
 
-what if we ditch the last two timepoints AND don't initialize, without rif
+what if we simplify to the first three timepoints?
 ```{r plot_no_rif_beta_short}
-#i'm also going to simplify to just three classes
+#could also simplify to just three classes [mut_class %in% c("Lethal", "Neutral")]
 # first, looking at beta
-current = noriftcsumm[ssap == "beta"][time_point %in% c(0, 1, 2, 3)][mut_class %in% c("Lethal", "Neutral")]
-bet <- ggplot(current, aes(x=time_point, y=meanRatio_no_init, color=nickname)) + 
-  geom_errorbar(aes(ymin=meanRatio_no_init-se_no_init, ymax=meanRatio_no_init+se_no_init, alpha = .3), width=.1) +
+current = noriftcsumm[ssap == "beta"][time_point %in% c(0, 1, 2)]
+bet <- ggplot(current, aes(x=time_point, y=mean_var, color=nickname)) + 
+  geom_errorbar(aes(ymin=mean_var-se_var, ymax=mean_var+se_var, alpha = .3), width=.1) +
   geom_line(aes(alpha = .3)) +
   geom_point(aes(group = nickname, alpha = .3)) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
@@ -168,10 +169,15 @@ bet <- ggplot(current, aes(x=time_point, y=meanRatio_no_init, color=nickname)) +
   ggtitle("Beta, no rif") +
   facet_wrap(~mut_class) +
   theme(legend.position="none")
+bet
+```
+
 #then PF020
-current = noriftcsumm[ssap == "PF020"][time_point %in% c(0, 1, 2, 3)][mut_class %in% c("Lethal", "Neutral")]
-pf <- ggplot(current, aes(x=time_point, y=meanRatio_no_init, color=nickname, label= N)) + 
-  geom_errorbar(aes(ymin=meanRatio_no_init-se_no_init, ymax=meanRatio_no_init+se_no_init, alpha = .3), width=.1) +
+```{r pf020}
+# could [mut_class %in% c("Lethal", "Neutral")]
+current = noriftcsumm[ssap == "PF020"][time_point %in% c(0, 1, 2)]
+pf <- ggplot(current, aes(x=time_point, y=mean_var, color=nickname, label= N)) + 
+  geom_errorbar(aes(ymin=mean_var-se_var, ymax=mean_var+se_var, alpha = .3), width=.1) +
   geom_line(aes(alpha = .3)) +
   geom_point(aes(group = nickname, alpha = .3)) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
@@ -180,20 +186,37 @@ pf <- ggplot(current, aes(x=time_point, y=meanRatio_no_init, color=nickname, lab
   ggtitle("PF020, no rif") +
   facet_wrap(~mut_class) +
   theme(legend.position="none")
+pf
 
-grid.arrange(bet, pf, nrow = 2)
+#grid.arrange(bet, pf, nrow = 2)
 
 ```
 
 ### ok trying another thing. let's add back all time points, and do no normalization to neutrals
 graphing the "seq freq" variable, with error bars as it's SE
 
-performing this with all time points
+```{r set_up}
+#specify current var to summarize: seq freq
+current_var = quote(seq_freq) ####
+
+noriftcsumm <- no_rif_tc[,
+                        list(
+                          Count = Count,
+                          N= .N,
+                          mean_var = mean(eval(current_var)),
+                          sd_var= sd(eval(current_var)),
+                          se_var= sd(eval(current_var)) / sqrt(.N) ),
+                        by=c("nickname", "mut_class", "time_point", "ssap")]
+
+
+```
+
 ```{r plot_norif_seq_freq}
+
 # first, looking at beta
-current = noriftcsumm[ssap == "beta"] #[time_point %in% c(0, 1, 2, 3)]
-bet <- ggplot(current, aes(x=time_point, y=mean_seq_freq, color=nickname)) + 
-  geom_errorbar(aes(ymin=mean_seq_freq-se_freq, ymax=mean_seq_freq+se_freq, alpha = .3), width=.1) +
+bet_table = noriftcsumm[ssap == "beta"][time_point %in% c(0, 1, 2)]
+bet <- ggplot(current, aes(x=time_point, y=mean_var, color=nickname)) + 
+  geom_errorbar(aes(ymin=mean_var-se_var, ymax=mean_var+se_var, alpha = .3), width=.1) +
   geom_line(aes(alpha = .3)) +
   geom_point(aes(group = nickname, alpha = .3)) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
@@ -202,10 +225,13 @@ bet <- ggplot(current, aes(x=time_point, y=mean_seq_freq, color=nickname)) +
   ggtitle("Beta, no rif") +
   facet_wrap(~mut_class) +
   theme(legend.position="none")
+bet
+```
+```{r pf020_version}
 #then PF020
-current = noriftcsumm[ssap == "PF020"] #[time_point %in% c(0, 1, 2, 3)]
-pf <- ggplot(current, aes(x=time_point, y=mean_seq_freq, color=nickname)) + 
-  geom_errorbar(aes(ymin=mean_seq_freq-se_freq, ymax=mean_seq_freq+se_freq, alpha = .3), width=.1) +
+csp_table = noriftcsumm[ssap == "PF020"][time_point %in% c(0, 1, 2)]
+pf <- ggplot(current, aes(x=time_point, y=mean_var, color=nickname)) + 
+  geom_errorbar(aes(ymin=mean_var-se_var, ymax=mean_var+se_var, alpha = .3), width=.1) +
   geom_line(aes(alpha = .3)) +
   geom_point(aes(group = nickname, alpha = .3)) +
   scale_y_continuous(trans = log10_trans(), #limit=c(0.0005, 8), 
@@ -214,10 +240,105 @@ pf <- ggplot(current, aes(x=time_point, y=mean_seq_freq, color=nickname)) +
   ggtitle("PF020, no rif") +
   facet_wrap(~mut_class) +
   theme(legend.position="none")
-
-grid.arrange(bet, pf, nrow = 2)
+pf
+#grid.arrange(bet, pf, nrow = 2)
 
 ```
+
+### i think it's time to apply the linear model, to seq freq variable
+setup:
+```{r setup}
+#function for linear modeling
+lm_group <- function(dt_subset, byval) {
+  lmod <- lm(log10(mean_var) ~ time_point, data= dt_subset[is.finite(mean_var)])
+  return(list(intercept= lmod$coefficients[1], slope= lmod$coefficients[2], mut_class= dt_subset$mut_class[1]))
+}
+
+#run linear model on beta and csprecT data
+full_table = noriftcsumm[(ssap == "beta")|(ssap == "PF020")][time_point %in% c(0, 1, 2)]
+full_table_slopes <- full_table[,
+  lm_group(.SD,.BY),
+  by=c('nickname', "ssap")]
+
+```
+
+
+#ok then actually plot the slopes
+first with beta:
+```{r}
+fig_bet <- ggplot(full_table_slopes[ssap == "beta"],
+                  aes(x=mut_class, y=slope,
+                      color = mut_class, group = nickname)) +
+  geom_hline(yintercept=0, linetype=2, size=0.5) + #baseline no slope
+  geom_jitter(width = 0.2, alpha = 0.7, size = 2) +
+  #annotate points below =0.05
+  geom_text(aes(label = nickname), vjust = -1.1,
+            data = subset(full_table_slopes[ssap == "beta"],
+                                        slope < -.05)) +
+  geom_boxplot(aes(group = mut_class), alpha = 0.7,
+               outlier.shape = NA) +
+  #facet_grid(~mut_class, scales='free_x', switch = 'both') +
+  theme_linedraw() +
+  labs(y = "RLR slopes (Beta, Rif0)") +
+  #scale_x_discrete(labels = x_labels) +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,
+                               size = fig_font_size),
+    axis.text.y = element_text(size = fig_font_size),
+    axis.title.y = element_text(size = fig_title_font_size),
+    axis.title.x = element_blank(),
+    strip.background=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
+
+fig_bet
+
+```
+
+
+then with csprecT
+```{r}
+fig_csp <- ggplot(full_table_slopes[ssap == "PF020"],
+                  aes(x=mut_class, y=slope,
+                      color = mut_class, group = nickname)) +
+  geom_hline(yintercept=0, linetype=2, size=0.5) + #baseline no slope
+  geom_jitter(width = 0.2, alpha = 0.7, size = 2)+
+  geom_boxplot(aes(group = mut_class), alpha = 0.7,
+               outlier.shape = NA) +
+  #annotate points below =0.05
+  geom_text(aes(label = nickname), vjust = -1.1,
+            data = subset(full_table_slopes[ssap == "PF020"],
+                                        slope < -.5)) +
+  #facet_grid(~mut_class, scales='free_x', switch = 'both') +
+  theme_linedraw() +
+  labs(y = "RLR slopes (CsprecT, Rif0)") +
+  #scale_x_discrete(labels = x_labels) +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,
+                               size = fig_font_size),
+    axis.text.y = element_text(size = fig_font_size),
+    axis.title.y = element_text(size = fig_title_font_size),
+    axis.title.x = element_blank(),
+    strip.background=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
+
+fig_csp
+```
+```{r}
+grid.arrange(fig_bet, fig_csp, nrow = 2)
+```
+
+
+
+
+
+
+
 
 ratio to neutral median, rather than mean
 ```{r plot_norif_seq_freq_median}
