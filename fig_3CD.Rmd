@@ -320,23 +320,28 @@ fwrite(output_table,output_to)
 unique(binary_summ$nickname)
 ```
 
-#setup figure 3D
+#figure 3D
 ```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
 
 
+
 fig3d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rpoB_C_1576_G'], 
-    aes(x=rif, y=median_enrichment, group=nickname )) + 
+    aes(x=rif, y=pmax(1e-4, median_enrichment),
+        group=nickname, color = "#F8766D")) + 
   geom_point( size = 2, alpha  = 0.7, stroke = 0) +
   geom_line( alpha = 0.7) +
+  #geom_text(data=current_combined[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
+  #geom_point(data=current_combined[number_undetected == 3], size = 2, shape=21, fill='white') +
   scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100),
-                     labels = log10(c(.000001, .00001, .0001, .001, .01, .1, 1, 10, 100)),
-                     limits=10^(c(-5.2,2))) +
+                     breaks = c( .0001, .001, .01, .1, 1, 10),
+                     limits= 10^(c(-4.2,1.6)),
+                     labels = c('\u2265 -4', -3, -2, -1, 0, 1)) +
   scale_x_continuous(trans = log_trans(base=2),
-                     breaks = c(12.5, 25, 50, 100)) +
+                     breaks = c(12.5, 25, 50, 100), 
+                     labels = c("12.5", "25", "50", "100")) +
   labs(
     x = "Rifampicin Concentration\n(µg/mL)",
-    y = "log10 Enrichment",
+    y = "Enrichment (log10)",
     color = "") + 
   geom_hline(yintercept=1, linetype=2) +
   theme_linedraw() +
@@ -357,7 +362,7 @@ fig3d
 
 
 ```{r save_fig3D}
-ggsave(here::here('fig_3D.pdf'), plot=fig3d, width=3, height=3, units='in', dpi=300, device = cairo_pdf)
+ggsave(here::here('fig_3D.pdf'), plot=fig3d, width=2.8, height=2.8, units='in', dpi=300, device = cairo_pdf)
 
 ```
 
