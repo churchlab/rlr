@@ -115,7 +115,7 @@ edited_fractions_ev_tidy_annotated = fread(read_from)
 ```
 
 
-#plot 1E
+#plot 2E
 ```{r setup_plot}
 #mean_locus_editing colors
 color_2d <- c('gyrA' = '#F8766D', 'rpoB' = '#00B4F0',
@@ -162,7 +162,7 @@ fig_2E <- ggplot(NULL) +
     axis.line=element_line(),
     legend.position = "none")
 
-fig_2E
+fig_2C
 
 ```
 
@@ -170,14 +170,13 @@ fig_2E
 fig_width=2.5
 fig_height = 3.33
 
-ggsave(here::here('fig_2E_out.pdf'), plot=fig_2E,
+ggsave(here::here('fig_2E_out.pdf'), plot=fig_2C,
        width=fig_width, height=fig_height,
        units='in', dpi=300, device = cairo_pdf)
 ```
 
 
-####
-#figure xx
+#figure S5B, turbidostat results in hours
 ##### moving this to supplemental
 ```{r examine_turbidostat_data_more_closely}
 figS5B <- ggplot(NULL)+

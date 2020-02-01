@@ -60,58 +60,14 @@ dt_folA_bedgraph = data.table(AB3_cutadapt_aln_folAzoom.bedgraph)
 
 ```
 
-
-#old version
-```{r plot_depth_ggplot}
-#change order of replicates, set colors
-dp_folA_region$replicate = factor(dp_folA_region$replicate, levels = c('WT','B','A'))
-colormapping = c(A='#F8766D', B='#00BFC4', WT='#DCDCDC')
-
-##### LOG VERSION
-depth_plot <- ggplot(dp_folA_region) + 
-  theme_bw() +
-  labs( y = "Coverage Depth",
-        x = "Genome Position") +
-  scale_x_continuous(limits = c(48000, 51000)) +
-  scale_y_continuous(trans = log_trans(base=10),
-                     breaks = c(0, 10, 100, 1000, 10000,100000)) +
-  theme(
-    strip.background=element_blank(), #strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    panel.border=element_blank(),
-    axis.line=element_line(),
-    legend.position = c(0.1, .8)) +
-  geom_density((aes(y=dp, x=pos, color = replicate,
-                   fill = replicate, alpha = 0.1)),
-                stat = "identity") +
-  scale_fill_manual(values=colormapping) +
-  scale_color_manual(values=colormapping) +
-  scale_alpha(guide = FALSE) +
-  #add vert lines for snps
-  geom_segment(x = 49765, xend = 49765, y = 0, yend = log10(max(dp_folA_region[pos == 49765]$dp)),
-             color = "black", size = 0.2) +
-  geom_segment(x = 49903, xend = 49903, y = 0, yend = log10(max(dp_folA_region[pos == 49903]$dp)),
-             color = "black", size = 0.2) +
-  geom_segment(x = 50280, xend = 50280, y = 0, yend = log10(max(dp_folA_region[pos == 50280]$dp)),
-             color = "black", size = 0.2) +
-  #add snp annotations
-  annotate("text", x= 49765 - 250, y = max(dp_folA_region[pos == 49765]$dp), label = "49765: C > T") +
-  annotate("text", x= 49903 + 250, y = max(dp_folA_region[pos == 49903]$dp), label = "49903: T > G") +
-  annotate("text", x= 50280 + 250, y = max(dp_folA_region[pos == 50280]$dp - 10), label = "50280: T > G")
-
-
-#50280	U00096.2	T	G
-depth_plot
-```
-
-### DBG, normalized vers
+### 
 ```{r set up figure}
 replicate_cols <- brewer.pal(n=9, name='YlGnBu')[c(5,8)]
 gene_cols <- brewer.pal(n=9, name='Greys')[c(5,4)]
 donor_cols <- brewer.pal(n=9, name='YlGn')[c(3,9)]
 
 #change order of replicates, set colors
-dp_folA_region$replicate = factor(dp_folA_region$replicate, levels = c('WT','B','A'))
+dp_folA_region$replicate = factor(dp_folA_region$replicate, levels = c('WT','A','B'))
 colormapping = c(A=replicate_cols[1], B=replicate_cols[2], WT='#888888')
 dp_folA_region[, dp_norm := dp / max(dp), by='replicate']
 
@@ -186,6 +142,7 @@ depth_plot <- ggplot(dp_folA_region) +
 #50280	U00096.2	T	G
 depth_plot
 ```
+
 ```{r segment plot}
 #plot segments
 #this output gets cleaned up in illustrator
@@ -217,7 +174,7 @@ col_plot <- ggplot(datatrim) +
                 stat = "identity") +
   scale_color_gradientn(
     name='# Reads', colors=donor_cols, limits=c(1000,60000), 
-    breaks=c(1,2,3,4,5)*10^4, labels=paste0(c(1,2,3,4,5),' x 10^5'),
+    breaks=c(1,2,3,4,5)*10^4, labels=paste0(c(1,2,3,4,5),' x 10^4'),
     guide=guide_legend(keyheight=0.9)) +
   scale_size(guide = FALSE) +
   geom_vline(data=snp_lines[1:2], aes(xintercept=pos), linetype=2)
