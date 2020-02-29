@@ -167,8 +167,8 @@ fig_1D <- ggplot(fig2d_rbind, aes(x= locus, y=fraction_edited, color=locus)) +
 fig_1D
 ```
 ```{r save_figure}
-fig_width = 3.5
-fig_height = 3.6 #edit of X,y axis makes it shorter
+fig_width = 3.25
+fig_height = 3.75 #edit of X,y axis makes it shorter
 
 ggsave(here::here('fig_2D_quasi2.pdf'), plot=fig_1D, width=fig_width, 
        height=fig_height, units='in', dpi=300, device = cairo_pdf)

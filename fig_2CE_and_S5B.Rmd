@@ -162,7 +162,7 @@ fig_2E <- ggplot(NULL) +
     axis.line=element_line(),
     legend.position = "none")
 
-fig_2C
+fig_2E
 
 ```
 
@@ -283,17 +283,18 @@ ggsave(here::here('fig_2C_out_test.pdf'), plot=fig_2C,
 
 
 ###### cruft below:
-```{r examine_turbidostat_data_with_generations}
+```{r examine_turbidostat_data_redo_color}
+
+
+
 fig_2C <- ggplot(NULL)+
-  #geom_line(data = edited_fractions_ev_tidy_annotated,
-  #          aes(x = generations_annotated, y= fraction_edited,
-  #               color = as.factor(ev_vial)), size = 1, alpha = 0.5) +
+
   geom_line(data = sim_data[r == 0.05],
             aes(x = generations, y= fraction_edited,
-                 color = "black"), size = 1, linetype = "dashed") +
+                 color = as.factor(ev_vial)), size = 1, linetype = "dashed") +
   geom_point(data = edited_fractions_ev_tidy_annotated,
              aes(x = generations_annotated, y= fraction_edited,
-                 color = '#F8766D'), size =3, alpha = 0.7, stroke = 0) +
+                 color = as.factor(ev_vial)), size =3, alpha = 0.7, stroke = 0) +
   
   theme_linedraw() +
   scale_y_continuous(breaks = c(0, .25, .5, .75, 1),

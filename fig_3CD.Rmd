@@ -184,7 +184,7 @@ binary_summ <- into_summ[,
 
 ```
 
-#prepare supplemental table 1A, list of figure 2C results for all alleles
+#prepare supplemental table 2, list of figure 2C results for all alleles
 ```{r rif_allele_summary_supp}
 output_table_1A <- binary_summ[rif == 12.5]
 output_table_1A[, c("rpoB allele type", "mut_class", #color_cat
@@ -300,7 +300,7 @@ ggsave(filename='fig_3C_new2.pdf', plot=fig3c, width=5, height=2.5, units='in', 
 
 ```
 
-#prepare supplemental table 1B, list of figure 3CD results for rif alleles
+#prepare supplemental table 3, list of figure 3D results for rif alleles
 ```{r rif_allele_summary_supp}
 output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
                                              "rpoB Allele, unknown effect")]
@@ -313,7 +313,7 @@ output_table[, c("rpoB allele type", "mut_class", #color_cat
 
 #rank highest to lowest by mean enrichment
 output_table[,rank_per_conc := rank(-mean_enrichment), by = "rif"]
-output_to = paste(parent_folder, 'rif_binary_out.csv', sep = "/")
+output_to = paste(parent_folder, 'supplemental_table_3.csv', sep = "/")
 fwrite(output_table,output_to)
 
 #output all alleles
