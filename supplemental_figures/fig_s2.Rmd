@@ -27,10 +27,6 @@ parent_folder = here::here('supplemental_figures/figS2')
 ```
 
 ```{r read_in_data}
-
-#data_dir = "/Users/Max_Schubert/dropbox_hms/active_seq_reads/5_2017_edits/5_4_2019_edits-126495366"
-#analysis_dir = "/Users/Max_Schubert/Dropbox/RLR_e.coli_dropbox/NewNotebook_expts/H_rlr1_closeout/h3"
-
 #data
 edit_data_name = "h3_merge_bins_out_redo"
 edit_data_file = paste(parent_folder, edit_data_name, sep = "/")
@@ -49,8 +45,7 @@ manifest_dt <- data.table(fread(manifest_file))
 #make smaller version to use as metadata
 metadata = manifest_dt[, c("V1", "Sample_Plate", "adaptrset",
                 "cutadapt_edit_5prime", "cutadapt_edit_3prime",
-                "cutadapt_5prime", "cutadapt_3prime", "filename", "reads"):=NULL] #reads was from the non-redo data
-
+                "cutadapt_5prime", "cutadapt_3prime", "filename", "reads"):=NULL]
 
 #merge manifest to edit_data
 melt_with_annot <- edit_data_melt[metadata, on = "Sample_ID", nomatch = 0]
@@ -58,17 +53,13 @@ melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values to make ta
 ```
 
 # measure fraction edited
-
 ```{r fraction_edited}
-
 melt_with_annot_nozero[, is_ref := (bc_read == ref)]
 melt_with_annot_nozero[, is_alt := (bc_read == alt)]
 
 #of sequences matching ref or alt, what fraction is edited
 melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_ID'][is_ref == TRUE]
 melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
-
-
 ```
 
 ```{r keep track of reads}
@@ -87,8 +78,7 @@ cutcount_dt <- data.table(fread(cutcount_file))
 #OK.... i somehow cutcount-ed 21.8M reads...
 ```
 
-
-## ok lets visualize the controls
+##visualize the controls
 # this is s2B, editing controls
 ```{r plot h1}
 h1 <- melt_with_fedit[expt == 'H1']
@@ -132,6 +122,7 @@ fig_s2 = ggplot(h1, aes(x=more_desc, y=fraction_edited, color=more_desc)) +
     y = "Fraction Edited") +
   scale_x_discrete(labels = x_labels)
 
+fig_s2
 #ggplotly()
 
 ggsave(here::here('supplemental_figures/fig_s2.pdf'),
@@ -139,8 +130,8 @@ ggsave(here::here('supplemental_figures/fig_s2.pdf'),
        useDingbats=FALSE) #this is so illustrator can interpret symbols
 ```
 
-# ok what about h7
-#this is s3A, PF020 efficiency across genotypes
+#h7
+#s3A, CspRecT efficiency across genotypes
 ```{r}
 
 h7 <- melt_with_fedit[expt == 'H7']
@@ -149,10 +140,6 @@ h7 <- melt_with_fedit[expt == 'H7']
 h7[parent == "bMS_446", genotype := "sbcB-, recJ-"]
 h7[parent == "bMS_453", genotype := "sbcB-, recJ-, mutS-"] 
 
-#
-#make_delta_prefix <- function(x,...){
-#  gsub('...',expression(Delta),x)
-#}
 
 #save H7 for inclusion in figure 1B appended section
 h7_scrubbed = copy(h7)
@@ -181,9 +168,6 @@ x_labels <- addline_format(c("WT","\u0394sbcB",
                              "\u0394sbcB, \u0394recJ",
                              "\u0394sbcB, \u0394recJ, \u0394mutS"))
 
-#\u0394
-#change order of colors
-#h7$desc <- factor(h7$desc, levels = c("PF020_rif","PF020_gyr"))
 
 make_percent <- function(x){
   paste(100*x, "%", sep="")
@@ -194,7 +178,6 @@ y_breaks = c(.001, .01, .1, .25, .5, 1)
 fig_supp3 <- ggplot(h7, aes(x=genotype, y=fraction_edited, color=desc)) + 
   geom_jitter(width = 0.2, height = 0.05, size = 3) +
   theme_bw() +
-  #scale_x_discrete(labels = addline_format(c("Background, control", "WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))) +#limit=c(0.0005, 8),) +
   scale_y_continuous(breaks = y_breaks,
                      labels = make_percent(y_breaks),
                      trans = log10_trans()) +
@@ -202,7 +185,7 @@ fig_supp3 <- ggplot(h7, aes(x=genotype, y=fraction_edited, color=desc)) +
   labs(
     x = "Genotype",
     y = "Fraction Edited",
-    title = "Effect of genotype on editing efficiency, using PF020 SSAP",
+    title = "Effect of genotype on editing efficiency, using CspRecT SSAP",
     color = "Locus") + # Add pairwise comparisons p-value
   stat_compare_means(comparisons = my_comparisons,
                      method = "t.test",
@@ -213,14 +196,14 @@ fig_supp3 <- ggplot(h7, aes(x=genotype, y=fraction_edited, color=desc)) +
 
 ggsave(here::here('supplemental_figures/fig_s3A.pdf'), plot=fig_supp3,
        width=7, height=6, units='in', dpi=300,
-       device = cairo_pdf) #removed usedingbats arg...
-#ggplotly()
+       device = cairo_pdf)
+
+fig_supp3
 ```
 
 #figure S3B
 ```{r h4_slide}
 h4 <- melt_with_fedit[expt == 'H4']
-
 
 #manual fix for position column
 ditch_pre <- function(x,...){
@@ -256,52 +239,3 @@ ggsave(here::here('supplemental_figures/fig_s3B.pdf'), plot=fig_supp3B,
        useDingbats = FALSE)
 #ggplotly()
 ```
-
-
-### throwing out this bottom section, H10 was repeated later
-
-
-```{r h10}
-h10 <- melt_with_fedit[expt == 'H10']
-
-
-#h7[parent == "bMS_446", genotype := "sbcB-, recJ-"]
-#h7[parent == "bMS_453", genotype := "sbcB-, recJ-, mutS-"] 
-
-#change plot order of genotypes, specify statistical comparisons
-h7$genotype <- factor(h7$genotype, levels = c("WT",
-                                              "sbcB-",
-                                              "recJ-",
-                                              "sbcB-, recJ-",
-                                              "sbcB-, recJ-, mutS-"))
-my_comparisons <- list( c("WT", "sbcB-"), c("sbcB-", "recJ-"),
-                        c("recJ-","sbcB-, recJ-"), c("sbcB-, recJ-", "sbcB-, recJ-, mutS-") )
-x_labels <- addline_format(c("WT", "∆sbcB", "∆recJ", "∆sbcB, ∆recJ", "∆sbcB, ∆recJ, ∆mutS"))
-
-h10_2 = h10[time_point == 2]
-
-ggplot(h10, aes(x=interaction(time_point, locus), y=fraction_edited, color=locus)) + 
-  geom_jitter(width = 0.2, height = 0.05, size = 3) +
-  theme_bw() +
-  scale_y_continuous(breaks = c(.00001, .0001, .001, .01, .1, .25, .5, .9),
-                     trans = log10_trans()) +
-  theme(text = element_text(size=18)) +
-  labs(
-    x = "Locus targeted for TAG > TAA",
-    y = "Fraction Edited",
-    title = "PF020 editing across diverse loci") +
-  theme(axis.text.x = element_text(angle = 90)) +
-  facet_wrap(~time_point)
-
-
-# Add pairwise comparisons p-value
-  stat_compare_means(comparisons = my_comparisons,
-                     method = "t.test",
-                     label = "p.signif",
-                     label.y = c(-1.4, -.9 , -.4, .1),
-                     tip.length = 0.02 ) +
-  scale_x_discrete(labels = x_labels)
-
-#ggplotly()
-```
-

@@ -11,17 +11,16 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 
 library(data.table)
-#library(stringr)
 library(plyr)
 library(gridExtra)
 require(ggplot2)
 require(data.table)
 require(scales)
-library(ggpubr)
-library(plotly)
-#dan's suggestion for plotting:
+#library(ggpubr)
+#library(plotly)
 library(ggrepel)
 library(R.utils)
+library(RColorBrewer) #install.packages("RColorBrewer")
 
 parent_folder = here::here('fig_5B')
 source(here::here('constants.R'))
@@ -41,8 +40,7 @@ SNP_table = "a3a4.csv"
 SNP_path = paste(parent_folder, SNP_table, sep = "/")
 SNP_file_dt = data.table(fread(SNP_path))
 
-#ditch columns with na's
-#cutting down table to only a few columns
+
 SNP_file_dt = Filter(function(x)!all(is.na(x)), SNP_file_dt) #kills columns with all NA
 SNP_file_trimmed_dt = SNP_file_dt[,c( "UID", "POSITION",
                                         "REF", "ALT",

@@ -11,7 +11,6 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 
 library(data.table)
-#library(stringr)
 library(plyr)
 library(gridExtra)
 require(ggplot2)
@@ -19,14 +18,11 @@ require(data.table)
 require(scales)
 library(ggpubr)
 library(plotly)
-#dan's suggestion for plotting:
 library(ggrepel)
 
 #for reading sam files
-library(Rsamtools) # first: BiocManager::install("Rsamtools")
-
-#for unzipping tlen files
-library(R.utils) # first install.packages('R.utils')
+library(Rsamtools) #BiocManager::install("Rsamtools")
+library(R.utils) #install.packages('R.utils')
 
 parent_folder = here::here('supplemental_figures/fig_S6A/')
 source(here::here('constants.R'))
@@ -45,7 +41,7 @@ gunzip_tlen(2)
 gunzip_tlen(3)
 ```
 
-### here's the code for the "tlen" column of a sam/bam file
+### here's the code for analyzing the template length, or "tlen" column of a sam/bam file
 ##### there are two rows for each read pair, need to be filtered down to one by removing tlen less than zero
 ```{r}
 const = "_tlen"
@@ -87,20 +83,23 @@ fig_s6A_lengths <- ggplot(combined, aes(V1, color = sample)) +
     panel.border=element_blank() )
 
 fig_s6A_lengths
-
+```
+```{r save_plot}
 ggsave('supplemental_figures/fig_s6A_lengths.pdf', plot=fig_s6A_lengths, width=4, height=3, units='in', dpi=300, useDingbats = FALSE)
 
 ```
 
 #optional: get rid of unzipped tlen files
 ```{r delete_unzipped_tlen_files}
-remove_dp <- function(x){
-  dp_name = paste(parent_folder,'/','s', as.character(x),
-                  '_uniq_dp', sep = "")
-  file.remove(dp_name)
+remove_tlen <- function(x){
+  tlen_name = paste(parent_folder,'s', as.character(x),
+                  '_tlen', sep = "")
+  file.remove(tlen_name)
 }
 
-remove_dp(2)
+remove_tlen(1)
+remove_tlen(2)
+remove_tlen(3)
 ```
 
 
