@@ -35,10 +35,10 @@ genome_size = 4641652
 ```
 
 #background
-### this communicates that the whole genome is covered, and that coverage is decently even
+### genome coverage in windows
 ```{r unzip_dp_data}
 gunzip_dp <- function(x){
-  dp_name = paste(parent_folder,'/','s', as.character(x),
+  dp_name = paste(parent_folder,'s', as.character(x),
                   '_uniq_dp.gz', sep = "")
   #print(dp_name)
   gunzip(dp_name, remove = FALSE)
