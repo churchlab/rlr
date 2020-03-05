@@ -32,7 +32,6 @@ source(here::here('constants.R'))
 ## reanalysis of experiment "H10"
 
 ```{r get_data}
-#different places than last time
 data_dir = parent_folder
 analysis_dir = parent_folder
 
@@ -47,7 +46,7 @@ edit_data_melt[, col := as.integer(gsub("[^0-9]", "", well))]
 ```
 
 ```{r read_in_metadata}
-#manifest, describing the sample sequenced
+#manifest, describing each sample sequenced
 manifest_name = "col2adapters.csv"
 manifest_file = paste(analysis_dir, manifest_name, sep = "/")
 manifest_dt <- data.table(fread(manifest_file))
@@ -59,13 +58,11 @@ metadata = manifest_dt[, c("adaptrset",
 
 #merge manifest to edit_data (merge changed from Sample_ID to 'col')
 melt_with_annot <- edit_data_melt[metadata, on = "col", nomatch = 0]
-melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values to make table smaller
+melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values 
 ```
 
 # measure fraction edited
-
 ```{r fraction_edited}
-
 melt_with_annot_nozero[, is_ref := (bc_read == ref)]
 melt_with_annot_nozero[, is_alt := (bc_read == alt)]
 
@@ -76,7 +73,6 @@ melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
 #save this table
 #save_to = 'h10fraction_edited.rds'
 #saveRDS(melt_with_fedit, file = paste(analysis_dir,save_to, sep = '/'))
-
 ```
 ```{r keep track of reads}
 
@@ -86,9 +82,7 @@ total_counts_ref_or_alt = sum(melt_with_annot_nozero[is_ref == TRUE | is_alt == 
 
 #compare ref_alt read num to total merged
 print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of reads are ref or alt seqs", sep = " "))
-
 ```
-
 
 ### append data from "H7" experiment in supp fig S3A showing results for cspRecT, for inclusion here. also plotted in 2B
 ```{r get_h7_data}
@@ -123,11 +117,11 @@ fig2d_rbind[, locus_recolor := factor(
   locus,
   levels=unique(locus)[c(4,11,1,2,3,5,6,7,8,9,10,12)])]
 
-color_2d <- c('gyrA' = '#F8766D', 'rpoB' = '#00B4F0',
+color_2d <- c('gyrA' = '#F8766D', 'rpoB' = '#00BFC4',
               'sucB' = '#FF64B0',
                'mreC' = '#DE8C00', 'murF' = '#00BA38', 'lolA' = '#619CFF',
                'lpxK' = '#B79F00','fabH' = '#00C08B','hemA' = '#C77CFF',
-               'fliN' = '#7CAE00','hda' = '#00BFC4','coaD' = '#F564E3')
+               'fliN' = '#7CAE00','hda' = '#00B4F0','coaD' = '#F564E3')
 
 ####
 mean_locus_editing = mean(fig2d_mean_editing_by_locus$mean_fraction_edited)
@@ -137,9 +131,6 @@ mean_locus_editing = mean(fig2d_mean_editing_by_locus$mean_fraction_edited)
 
 ```{r h10_redo}
 fig_1D <- ggplot(fig2d_rbind, aes(x= locus, y=fraction_edited, color=locus)) + 
-  #geom_beeswarm(size = 4, priority = "random",
-  #              cex = 4, dodge.width=2,
-  #              alpha = 0.7, stroke = 0) +
   geom_quasirandom(method='pseudorandom', size = 3, alpha = 0.7, stroke = 0)+
   geom_hline(yintercept=mean_locus_editing, linetype=2, size=0.5) +
   theme_linedraw() +

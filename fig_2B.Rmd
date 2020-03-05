@@ -36,8 +36,7 @@ source(here::here('constants.R'))
 
 # fig1B, beta editing across genotypes
 
-```{r fig1_load_data_and_metadata}
-#from b22 analysis
+```{r fig2_load_data_and_metadata}
 fig_2B_dir = "fig_2B"
 current_folder <- paste(parent_folder, fig_2B_dir, sep = '/')
 
@@ -49,10 +48,9 @@ edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read
 edit_data_melt[, Sample_num := as.numeric(str_replace_all(Sample, "_cutcount", ""))]
 
 #import manifest
-#this contains the data "expt_set" and "tx" for annotating metadata!
+#this contains the data "expt_set" and "tx" for annotating metadata
 manifest_file = paste(current_folder, "FC_04592_1234_PF_mm1_mschubert_manifest_edited.csv", sep = "/")
 manifest_dt <- data.table(fread(manifest_file)) 
-#kill a ton of these columns
 manifest_dt = Filter(function(x)!all(is.na(x)), manifest_dt) #kills columns with all NA
 manifest_dt = manifest_dt[,c('Sample_num','expt_set','well_indexed','tx','editing_timepoint', 'control_status')] #keeps only specified columns
 
@@ -88,13 +86,13 @@ print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of
 
 ```
 
-### append data from "H7" experiment in supp fig S3A showing results for cspRecT, for inclusion here
+### append data from "H7" experiment in fig S3A showing results for cspRecT, for inclusion here
 ```{r get_h7_data}
 h7_scrubbed = readRDS(file = "h7data")
 h7_triple <- h7_scrubbed[genotype == "sbcB-, recJ-, mutS-" ]
 h7_triple$genotype = "∆mutS, ∆recJ, ∆sbcB, + CspRecT"
 
-#also scrub b22 data (beta as SSAP) for plotting
+#also scrub fig2B data (beta as SSAP) for plotting
 b22 <- melt_with_fedit[expt_set == 'b22']
 b22[control_status != 'background']
 b22_scrubbed <- copy(b22)
@@ -143,7 +141,7 @@ genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB, + CspRecT") & (loc
 genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB, + CspRecT") & (locus == "rpoB"), mean_fraction_edited] / genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB") & (locus == "rpoB"), mean_fraction_edited]
 ```
 
-## Fig 2B (this version with csprecT results appended)
+## Fig 2B (with csprecT results appended)
 ###setup
 ```{r fig_2B_setup}
 #to make Xlabels have multiple lines, instead of comma and space:
@@ -222,6 +220,11 @@ ggsave(here::here('fig_2B_out.pdf'), plot=fig2B,
 
 ```
 
+
+
+
+
+
 ###optional: compute the differences between alleles, across genotypes
 ### in general, as efficiency improves, differences between alleles decrease
 ```{r locus_diff}
@@ -250,10 +253,6 @@ x_labels <- addline_format(c("WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆r
 figdiff <- ggplot(genotype_rbind_locus_ratios,
                   aes(x=genotype, y=locus_abs_ratio)) + 
   geom_point(size = 2) +
-  #geom_quasirandom(method='pseudorandom', size = 3, alpha = 0.7, stroke = 0)+
-  #scale_y_continuous(breaks = y_breaks,
-  #                   label=c(scientific_10(y_breaks[1:3]), y_breaks[4:7]), 
-  #                   trans = log10_trans()) +
   labs(
     y = "Editing difference between loci, ratio",
     x = "Genotype") +
@@ -300,318 +299,4 @@ figdiff2 <- ggplot(genotype_rbind_locus_ratios[(genotype != "∆mutS, ∆sbcB") 
 figdiff2
 
 ```
-
-
-
-##### cruft below, delete for cleanup
-
-## Fig 1C
-
-```{r fig1c_plot, fig.height=3, fig.width=4, dpi=200}
-#to make Xlabels have multiple lines, instead of comma and space:
-addline_format <- function(x,...){
-  gsub(', ','\n',x)
-}
-
-#looking first at b22 samples
-#optional filters
-b22 <- melt_with_fedit[expt_set == 'b22']
-b22 <- b22[control_status != 'background']
-
-#look only at controls
-b22controls <- melt_with_fedit[expt_set == 'b22' & control_status == 'background']
-#basically, no edited sequence was ever detected for controls
-
-
-#change plot order of genotypes, specify statistical comparisons
-b22$strain_genotype <- factor(b22$strain_genotype, levels = c("WT","∆mutS",
-                                                              "∆mutS, ∆sbcB",
-                                                              "∆mutS, ∆recJ",
-                                                              "∆mutS, ∆recJ, ∆sbcB"))
-my_comparisons <- list( c("WT", "∆mutS"), c("∆mutS", "∆mutS, ∆sbcB"),
-                        c("∆mutS, ∆sbcB","∆mutS, ∆recJ"), c("∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB") )
-
-x_labels <- addline_format(c("WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))
-
-scientific_10 <- function(x) {
-  parse(text=gsub("e", " %*% 10^", scales::scientific_format()(x)))
-}
-
-y_breaks <- c(.00001, .0001, .001, .01, .1, .5)
-
-fig1c <- ggplot(b22, aes(x=strain_genotype, y=fraction_edited, color=adapters)) + 
-  geom_jitter(width = 0.1, height = 0.1, size = 1) +
-  scale_y_continuous(breaks = y_breaks,
-                     label=c(scientific_10(y_breaks[1:3]), y_breaks[4:6]), 
-                     trans = log10_trans()) +
-  theme(text = element_text(size=10)) +
-  labs(
-    x = "Genotype",
-    y = "Fraction Edited",
-    title = "",
-    color = "Locus") + # Add pairwise comparisons p-value
-  stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif", position=0.1) +
-  scale_x_discrete(labels = x_labels) +
-  theme_linedraw() +
-  theme(
-    text = element_text(size=fig_font_size),
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
-    panel.border=element_blank(),
-    axis.line=element_line(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    panel.grid.minor.y=element_blank(),
-    legend.position = c(0.05, 0.95),
-    legend.title = element_blank(),
-    legend.box = "horizontal",
-    legend.direction = "horizontal")
-
-fig1c
-
-fig_width=figure_width*2/3
-fig_height_ratio=2/3
-
-ggsave(here::here('fig1c.pdf'), plot=fig1c, width=fig_width, 
-       height=fig_height_ratio*fig_width, units='in', dpi=300)
-
-```
-
-
-
-```{r fig1cd, fig.width=7.5, fig.height=3, units='in', dpi=300}
-
-total_width=figure_width
-relative_cd_width = 1.5
-total_height=total_width/(relative_cd_width+1)
-
-fig1c_comb <- fig1c + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
-fig1d_comb <- fig1d + labs(y='') + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
-grid.newpage()
-fig1cd <- plot_grid(
-  plotlist=list(fig1c_comb, fig1d_comb),
-  align = 'hv',
-  axis='tblr',
-  rel_widths = c(relative_cd_width,1))
-
-fig1cd
-
-ggsave(here::here('fig1cd.pdf'),
-       plot=fig1cd, width=total_width,
-       height=total_height, units='in', dpi=300,
-       device = cairo_pdf)
-```
-
-
-
-
-### planning to delete all below for cleanup
-
-
-
-
-### alternative setup for figure one: plot pf020 editing efficiency right next door to beta
-
-
-# ok what about h7
-#this is s3A, PF020 efficiency across genotypes
-```{r read_in_data}
-#
-parent_folderh7 = here::here('supplemental_figures/figS2')
-#data
-edit_data_name = "h3_merge_bins_out_redo"
-edit_data_file = paste(parent_folderh7, edit_data_name, sep = "/")
-edit_data_dt <- data.table(fread(edit_data_file))
-edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
-#use Sample_ID to merge to metadata
-edit_data_melt[, Sample_ID := as.numeric(str_replace_all(Sample, "_cutcount", ""))]
-
-```
-
-```{r read_in_metadata}
-#manifest, describing the sample sequenced
-manifest_name = "edit_info.csv"
-manifest_file = paste(parent_folderh7, manifest_name, sep = "/")
-manifest_dt <- data.table(fread(manifest_file))
-#make smaller version to use as metadata
-metadata = manifest_dt[, c("V1", "Sample_Plate", "adaptrset",
-                "cutadapt_edit_5prime", "cutadapt_edit_3prime",
-                "cutadapt_5prime", "cutadapt_3prime", "filename", "reads"):=NULL] #reads was from the non-redo data
-
-
-#merge manifest to edit_data
-melt_with_annot <- edit_data_melt[metadata, on = "Sample_ID", nomatch = 0]
-melt_with_annot_nozero = melt_with_annot[Count > 0] #kill zero values to make table smaller
-```
-
-# measure fraction edited
-
-```{r fraction_edited}
-
-melt_with_annot_nozero[, is_ref := (bc_read == ref)]
-melt_with_annot_nozero[, is_alt := (bc_read == alt)]
-
-#of sequences matching ref or alt, what fraction is edited
-melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_ID'][is_ref == TRUE]
-melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
-
-
-```
-```{r}
-
-h7 <- melt_with_fedit[expt == 'H7']
-
-#manual fix for bMS_446, 453 genotypes
-h7[parent == "bMS_446", genotype := "sbcB-, recJ-"]
-h7[parent == "bMS_453", genotype := "sbcB-, recJ-, mutS-"] 
-
-#
-#make_delta_prefix <- function(x,...){
-#  gsub('...',expression(Delta),x)
-#}
-
-#change plot order of genotypes, specify statistical comparisons
-h7$genotype <- factor(h7$genotype, levels = c("WT",
-                                              "sbcB-",
-                                              "recJ-",
-                                              "sbcB-, recJ-",
-                                              "sbcB-, recJ-, mutS-"))
-my_comparisons <- list( c("WT", "sbcB-"), c("sbcB-", "recJ-"),
-                        c("recJ-","sbcB-, recJ-"), c("sbcB-, recJ-", "sbcB-, recJ-, mutS-") )
-
-#x labels, greek characters as unicode
-x_labels <- addline_format(c("WT","\u0394sbcB",
-                             "\u0394recJ",
-                             "\u0394sbcB, \u0394recJ",
-                             "\u0394sbcB, \u0394recJ, \u0394mutS"))
-
-#\u0394
-#change order of colors
-#h7$desc <- factor(h7$desc, levels = c("PF020_rif","PF020_gyr"))
-
-
-
-y_breaks = c(.001, .01, .1, .25, .5, 1)
-
-fig_supp3 <- ggplot(h7, aes(x=genotype, y=fraction_edited, color=desc)) + 
-  geom_jitter(width = 0.2, height = 0.05, size = 3) +
-  theme_bw() +
-  #scale_x_discrete(labels = addline_format(c("Background, control", "WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))) +#limit=c(0.0005, 8),) +
-  scale_y_continuous(breaks = y_breaks,
-                     labels = make_percent(y_breaks),
-                     trans = log10_trans()) +
-  theme(text = element_text(size=18)) +
-  labs(
-    x = "Genotype",
-    y = "Fraction Edited",
-    color = "Locus") + # Add pairwise comparisons p-value
-  stat_compare_means(comparisons = my_comparisons,
-                     method = "t.test",
-                     label = "p.signif",
-                     label.y = c(-1.4, -.9 , -.4, .1),
-                     tip.length = 0.02 ) +
-  scale_x_discrete(labels = x_labels)
-
-fig_supp3
-
-ggsave(here::here('supplemental_figures/fig_s3A.pdf'), plot=fig_supp3,
-       width=7, height=6, units='in', dpi=300,
-       device = cairo_pdf) #removed usedingbats arg...
-#ggplotly()
-```
-
-
-```{r scrub and bind data}
-#scrub h7
-h7_scrubbed = copy(h7)
-h7_scrubbed[, ssap := more_desc]
-h7_scrubbed[, well := Sample_Well]
-h7_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "Count",
-       "Sample_ID", "expt", "time_point", "tx", "Sample_Well",
-       "parent", "plas", "desc" , "notebook", "ref", "alt", "more_desc"):=NULL]
-
-save_as = paste(parent_folder, "h7data", sep = "/")
-saveRDS(h7_scrubbed, file = save_as)
-
-#scrub b22\
-#regenerate B
-#b22 <- melt_with_fedit[expt_set == 'b22']
-#b22 <- b22[control_status != 'background']
-b22_scrubbed <- copy(b22)
-b22_scrubbed[, well := well_indexed]
-b22_scrubbed[, ssap := "Beta"]
-b22_scrubbed[, genotype := strain_genotype]
-b22_scrubbed[, locus := adapters]
-b22_scrubbed = b22_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "Count",
-                       "Sample_num", "expt_set", "well_indexed", "tx", "editing_timepoint",
-                       "control_status", "parent", "strain_genotype", "plas", "adapters", "comment",
-                       "plas_desc", "ref", "alt", "is_ref", "is_alt") := NULL]
-
-
-
-
-genotype_rbind = rbind(h7_scrubbed, b22_scrubbed)
-
-```
-
-
-```{r}
-
-
-###### special plot stuff, getting rid of for now
-#change plot order of genotypes, specify statistical comparisons
-
-my_comparisons <- list( c("WT", "∆mutS"), c("∆mutS", "∆mutS, ∆sbcB"),
-                        c("∆mutS, ∆sbcB","∆mutS, ∆recJ"), c("∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB") )
-
-x_labels <- addline_format(c("WT", "∆mutS", "∆mutS, ∆sbcB", "∆mutS, ∆recJ", "∆mutS, ∆recJ, ∆sbcB"))
-
-
-
-#### actual plotting command
-y_breaks <- c(.00001, .0001, .001, .01, .1, .5, 1)
-
-scientific_10 <- function(x) {
-  parse(text=gsub("e", " %*% 10^", scales::scientific_format()(x)))
-}
-make_percent <- function(x){
-  paste(100*x, "%", sep="")
-}
-
-plot_genos <- ggplot(genotype_rbind, aes(x=genotype, y=fraction_edited, color=locus)) + 
-  geom_jitter(width = 0.1, height = 0.1, size = 1) +
-  scale_y_continuous(breaks = y_breaks,
-                     label=c(scientific_10(y_breaks[1:3]), make_percent(y_breaks[4:7])), 
-                     trans = log10_trans()) +
-  theme(text = element_text(size=10)) +
-  facet_wrap(~ssap) +
-  labs(
-    x = "Genotype",
-    y = "Fraction Edited",
-    color = "Locus") + # Add pairwise comparisons p-value
-  #stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif", position=0.1) +
-  #scale_x_discrete(labels = x_labels) +
-  theme_linedraw() +
-  theme(
-    text = element_text(size=fig_font_size),
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    axis.title.x=element_text(margin = margin(1.2*fig_font_size,0,0,0, "pt")), 
-    panel.border=element_blank(),
-    axis.line=element_line(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    panel.grid.minor.y=element_blank(),
-    legend.position = c(0.05, 0.95),
-    legend.title = element_blank(),
-    legend.box = "horizontal",
-    legend.direction = "horizontal")
-
-plot_genos
-
-
-```
-
-
 
