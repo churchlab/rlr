@@ -78,8 +78,8 @@ x_labels <- addline_format(c("∆recJ, ∆sbcB","∆recJ, ∆sbcB, +mutL*","∆m
 
 #filter for fig1E data
 b19 <- melt_with_fedit[expt_set == 'b19']
-#show first timepoint
-b19 <- b19[editing_timepoint == 1]
+#show second timepoint
+b19 <- b19[editing_timepoint == 2]
 ```
 
 

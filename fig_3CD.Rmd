@@ -57,14 +57,14 @@ num_merged = as.character(num_merged)
 num_annot = as.character(num_annot)
 pct_annot = as.character(pct_annot)
 
-
-
-
+#keep track of reads
 print(paste(num_annot, "reads annotated of",
             num_merged, "total reads, or",
             100*as.numeric(pct_annot), "%", sep = " "))
 ```
 
+#additional batch of sequence data, to combine with above
+####error rates were higher, so a smaller proportion of exact sequence matches are found
 ```{r PULL_NEW_DATA}
 mergebinpath2 <- paste(parent_folder,"H6_merged_bins", sep = "/" )
 merged_bins2.dt <- data.table(fread(mergebinpath2))
@@ -153,9 +153,9 @@ before_after_1[Count_both == 0, Count_both := 1]
 
 before_after_1[, seq_freq := Count_both/total_count_sample]
 ```
-at this point, the analysis branches. here i'm examining the ratios of different alleles in rif platings of different conc, to their "initial" frequency in the t = 1 samples
+
  
-#Rif
+##compute "binary" results, that is, ratio before and after selection
 ```{r ratio_summarize}
 before_after_1[, enrichment.post.rif := seq_freq / seq_freq[time_point==1],
       by=c("tx","nickname","rif")] #within each replicate, for each sequence
@@ -207,14 +207,9 @@ fwrite(output_table_1A,output_to)
 
 color_vals = c('#00BA38', #green
                '#619CCF', #dark blue
-               #'#F564E3', #purple
-               '#F8766D') #, #red
-               #'#B79F00'# #gold
-
-#addline_format <- function(x,...){gsub(' ','\n',x)}
+               '#F8766D') #salmon
 
 current = binary_summ[rif == 12.5] #rif concentration for binary plot here
-
 
 # lower limit, unfilled/filled, combine del/lethal, neutral/unrelated
 #also plot all rif resistance and rpoB alleles together
@@ -222,7 +217,6 @@ current_combined = copy(current)
 current_combined[mut_class == 'Deleterious', mut_class := 'Lethal']
 current_combined[mut_class == 'Lethal', mut_class := 'Lethal,\nDeleterious']
 current_combined[mut_class == 'Lethal,\nDeleterious', color_cat := 1]
-
 current_combined[mut_class == 'Unrelated Resistance Alleles', mut_class := 'Neutral']
 current_combined[mut_class == 'Neutral', mut_class := 'Neutral,\nUnrelated Resistance']
 current_combined[mut_class == 'Neutral,\nUnrelated Resistance', color_cat := 2]
@@ -238,7 +232,6 @@ current_combined[, mut_class := factor(
   levels=unique(mut_class)[c(1,2,3)],
   labels=unique(mut_class)[c(1,2,3)])]
   
-#current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(3:6)])]
 ```
 #execute figure 3C
 ```{r fig3C, fig.width=6, fig.height=3, units='in', dpi=300}
@@ -322,16 +315,11 @@ unique(binary_summ$nickname)
 
 #figure 3D
 ```{r plot_concentration_change, fig.width=3, fig.height=3, units='in', dpi=300}
-
-
-
 fig3d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rpoB_C_1576_G'], 
     aes(x=rif, y=pmax(1e-4, median_enrichment),
         group=nickname, color = "#F8766D")) + 
   geom_point( size = 2, alpha  = 0.7, stroke = 0) +
   geom_line( alpha = 0.7) +
-  #geom_text(data=current_combined[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
-  #geom_point(data=current_combined[number_undetected == 3], size = 2, shape=21, fill='white') +
   scale_y_continuous(trans = log_trans(base=10),
                      breaks = c( .0001, .001, .01, .1, 1, 10),
                      limits= 10^(c(-4.2,1.6)),
@@ -359,139 +347,8 @@ fig3d <- ggplot(binary_summ[mut_class=="Rifampicin Resistance" | nickname == 'rp
 
 fig3d
 ```
-
-
 ```{r save_fig3D}
 ggsave(here::here('fig_3D.pdf'), plot=fig3d, width=2.8, height=2.8, units='in', dpi=300, device = cairo_pdf)
 
 ```
 
-
-
-
-
-
-
-
-######## cruft to be deleted...
-# older version of 2c plot
-```{r grouped_summarized, fig.width=6, fig.height=3, units='in', dpi=300}
-
-color_vals = c('#00BA38', #green
-               '#619CCF', #dark blue
-               '#F564E3', #purple
-               '#F8766D', #red
-               '#B79F00') #gold
-
-addline_format <- function(x,...){gsub(' ','\n',x)}
-
-current = binary_summ[rif == 12.5] #rif concentration for binary plot here
-
-current[, mut_class := factor(
-  mut_class,
-  levels=unique(mut_class)[c(1,2,3,4,6,5)],
-  labels=addline_format(unique(mut_class)[c(1,2,3,4,6,5)]))]
-  
-# lower limit, unfilled/filled
-current_combine_lethal = copy(current)
-current_combine_lethal[mut_class == 'Deleterious', mut_class := 'Lethal']
-current_combine_lethal[mut_class == 'Lethal', mut_class := 'Lethal/Deleterious']
-current_combine_lethal[mut_class == 'Lethal/Deleterious', color_cat := 2]
-current_combine_lethal[, mut_class := factor(mut_class, levels=levels(mut_class)[c(7,3:6)])]
-
-fig2c <- ggplot(current_combine_lethal, aes(
-    x=reorder(nickname,logmean_enrichment), 
-    y=pmax(1e-4, logmean_enrichment), 
-    color= as.factor(color_cat),
-    fill= as.factor(color_cat))) + 
-  geom_linerange(aes(
-    ymin=pmax(1e-4,logmean_enrichment-iqr_enrichment), 
-    ymax=pmax(1e-4,logmean_enrichment+iqr_enrichment)),
-    color="black", 
-    alpha = 0.3) +  
-  geom_point(data=current_combine_lethal[number_undetected == 0], size = 2, shape=21) +
-  geom_point(data=current_combine_lethal, size = 2, shape=21, fill=NA) +
-  geom_text(data=current_combine_lethal[number_undetected > 0 & number_undetected < 3], label="\u25D3", size=4.7, family = "Arial Unicode MS") +
-  geom_point(data=current_combine_lethal[number_undetected == 3], size = 2, shape=21, fill='white') +
-  scale_colour_manual(values = color_vals[1:5]) +
-  scale_fill_manual(values = color_vals[1:5]) +
-  scale_y_continuous(
-    trans = log_trans(base=10),
-    breaks = c(.001, .01, .1, 1, 10, 100),
-    labels = c('\u2265 -3', log10(c(.01, .1, 1, 10, 100))),
-    limits=10^(c(-4.2,1.6)),
-    expand=c(-0.01,0)) +
-  scale_x_discrete(expand=c(0.16,0.16)) +
-  facet_grid(~mut_class, scales='free_x', space='free_x', switch='both') +
-  labs(
-    x = "Allele",
-    y = "Allelic enrichment (log10)\n 12.5 µg/mL Rifampicin",
-    color = "Allele type") + 
-  theme_linedraw() +
-  geom_hline(yintercept=1, linetype=2) +
-  theme(text = element_text(size=fig_font_size)) +
-  theme(
-    axis.text.x= element_blank(),
-    axis.ticks.x=element_blank(),
-    strip.background=element_blank(), strip.placement='outside',
-    strip.text=element_text(color='black'), 
-    panel.spacing=unit(0,'pt'),
-    panel.border=element_blank(),
-    panel.grid.major.x=element_blank(),
-    panel.grid.minor.x=element_blank(),
-    axis.line=element_line(),
-    legend.position = 'none')
-
-fig2c
-
-#ggsave('fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300)
-
-ggsave(filename='fig2c.pdf', plot=fig2c, width=6, height=3, units='in', dpi=300, device=cairo_pdf)
-
-```
-
-
-#prepare supplemental table 1B, list of figure 3CD results for rif alleles
-```{r rif_allele_summary_supp}
-output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
-                                             "rpoB Allele, unknown effect")]
-output_table[, c("rpoB allele type", "mut_class", #color_cat
-                 "Count", "N", "mean_seq_freq", "median_seq_freq",
-                 "median_enrichment", "max_enrichment",
-                 "min_enrichment", "logmean_enrichment", 
-                 "sd_freq", "se_freq", "sd_enrichment",
-                 "log_se_enrichment", "aa_position", "aa_ref", "aa_alt"):=NULL]
-
-#rank highest to lowest by mean enrichment
-output_table[,rank_per_conc := rank(-mean_enrichment), by = "rif"]
-output_to = paste(parent_folder, 'rif_binary_out.csv', sep = "/")
-fwrite(output_table,output_to)
-
-#output all alleles
-unique(binary_summ$nickname)
-```
-
-
-######### deprecated: plotting both as one panel
-
-```{r fig2bc, fig.width=6, fig.height=2, units='in', dpi=300}
-
-total_width=figure_width
-relative_bc_width = 2
-total_height=total_width/(relative_bc_width+1)
-
-fig2b_comb <- fig2b + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
-fig2c_comb <- fig2c + labs(y='') + theme(plot.margin = unit(c(0, 0, 0, 0), "pt"))
-grid.newpage()
-fig2bc <- plot_grid(
-  plotlist=list(fig2b_comb, fig2c_comb),
-  align = 'hv',
-  axis='tblr',
-  rel_widths = c(relative_bc_width,1))
-
-fig2bc
-
-ggsave(here::here('fig2bc.pdf'), plot=fig2bc, width=total_width, height=total_height, units='in', dpi=300)
-
-
-```

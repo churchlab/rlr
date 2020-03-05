@@ -18,7 +18,7 @@ require(data.table)
 require(scales)
 library(ggpubr)
 
-parent_folder = here::here('fig_4C_linmod')
+parent_folder = here::here('fig_4C')
 source(here::here('constants.R'))
 
 #function to turn spaces into newlines
@@ -36,8 +36,8 @@ lm_group <- function(dt_subset, byval) {
 ```{r get data}
 #get RLR trajectory data
 lin.mod.path = parent_folder
-start.data.file5 = paste(here::here('fig_4B_real'), "fig4Bdata_megatable5.RData", sep = "/")
-start.data.file100 = paste(here::here('fig_4B_real'), "fig4Bdata_megatable100.RData", sep = "/")
+start.data.file5 = paste(here::here('fig_4B'), "fig4Bdata_megatable5.RData", sep = "/")
+start.data.file100 = paste(here::here('fig_4B'), "fig4Bdata_megatable100.RData", sep = "/")
 load(start.data.file5)#this creates the file megatable5
 load(start.data.file100)
 
@@ -72,19 +72,18 @@ megatable_slopes_3points <- megatable5[
   by='nickname']
 simple_slopes3 <- megatable_slopes_3points[mut_class %in% c('Lethal','Neutral','rpoB Alleles')]
 
-#
-# dirty fix to harmonize allele names
+#harmonize allele names
 simple_slopes3[nickname=='rpoB_CACTCGGCCCAG_1595_nan', nickname := 'rpoB_CACTCGGCCCAG_1594_nan']
 simple_slopes3[nickname=='rpoB_C_1534_T', nickname := 'rpoB_C_1535_T']
-# add wildtype to slopes explicitly
+# add wildtype explicitly
 simple_slopes_final3 <- rbind(simple_slopes3, data.table(nickname='WT', intercept=0, slope=0, mut_class='Neutral'))
 
 indiv_v_rlr3 <- merge(clonalgrowth.dt, simple_slopes_final3, by.x='hard_desc', by.y='nickname')
 
-#slope_fit <- indiv_v_rlr[, cor.test(slope, mean-1, method=c("pearson"))]
-slope_fit3 <- indiv_v_rlr3[, cor.test(slope, log10(mean), method=c("pearson"))]
-#slope_fit <- indiv_v_rlr[, cor.test(2^slope, mean, method=c("pearson"))]
 
+slope_fit3 <- indiv_v_rlr3[, cor.test(slope, log10(mean), method=c("pearson"))]
+
+#annotate
 p.val <- format(slope_fit3$p.value, scientific=TRUE, digits=3)
 pearson_r <- round(slope_fit3$estimate, 3)
 ```
@@ -123,7 +122,7 @@ ggplot(simple_summ, aes(x=timepoint, y=log10(meanRatio), color=nickname)) +
   facet_wrap(~mut_class)
 ```
 
-###actual figure 3D
+###figure 3D
 ```{r plot_fig}
 fig_3d <- ggplot(indiv_v_rlr3, 
   aes(x=slope, y=log10(mean))) + 
@@ -154,7 +153,6 @@ ggsave(here::here('fig_3D_linmod.pdf'), plot=fig_3d, width=3,
 ```
 
 
-## optional: exploratory plot examining slopes by mut class, rif 5
 #### supplemental fig S4C
 ```{r plot slopes by mut class}
 more_summ <- summary
@@ -192,39 +190,4 @@ fig_s4C
 ggsave(here::here('supplemental_figures/fig_S4C.pdf'), plot=fig_s4C, width=3.5, 
        height=3, units='in', dpi=300, device = cairo_pdf)
 
-```
-
-
-
-
-
-#############
-cruft below, to delete
-
-##############
-##### try all replicates having their own linmod
-```{r more_linmods}
-megatable_slopes_3points_3reps <- megatable5[
-  (ratio_expt == "A" | ratio_expt == "A_5") & (ratio_median_neutrals > 0) &
-    (timepoint %in% c(1,2,3)) & 
-    sample_type != 'msDNA' & induction != 'n',
-  lm_group(.SD,.BY),
-  by=c('nickname', 'replicate')]
-
-
-simple_slopes_allreps <- megatable_slopes_3points_3reps[mut_class %in% c('Lethal','Neutral','rpoB Alleles')]
-
-
-simpleslopesumm <- simple_slopes_allreps[, 
-                            list(
-                              N= .N,
-                              meanSlope= mean(slope),
-                              slope_sd= sd(slope),
-                              slope_se= sd(slope) / sqrt(.N)),
-                            by=c("nickname", "mut_class")]
-
-ggplot(simple_slopes_allreps, aes(x=mut_class, y=slope, group = interaction(nickname, replicate), color = mut_class))+
-  geom_point()+
-  theme_bw() +
-  stat_compare_means(comparisons = list(c('Lethal','Neutral')), test = t.test)
 ```
