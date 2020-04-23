@@ -64,7 +64,7 @@ print(paste(num_annot, "reads annotated of",
 ```
 
 #additional batch of sequence data, to combine with above
-####error rates were higher, so a smaller proportion of exact sequence matches are found
+####seq error rates were higher, so a smaller proportion of exact sequence matches are found
 ```{r PULL_NEW_DATA}
 mergebinpath2 <- paste(parent_folder,"H6_merged_bins", sep = "/" )
 merged_bins2.dt <- data.table(fread(mergebinpath2))
@@ -184,21 +184,31 @@ binary_summ <- into_summ[,
 
 ```
 
-#prepare supplemental table 2, list of figure 2C results for all alleles
+#prepare supplemental data file 3, list of figure 2C results for all alleles
 ```{r rif_allele_summary_supp}
-output_table_1A <- binary_summ[rif == 12.5]
-output_table_1A[, c("rpoB allele type", "mut_class", #color_cat
+output_table <- binary_summ[rif == 12.5]
+output_table[, c("rpoB allele type", "mut_class", #color_cat
                  "Count", "N", "mean_seq_freq", "median_seq_freq",
                  "median_enrichment", "max_enrichment","logmean_enrichment", 
                  "sd_freq", "se_freq", "sd_enrichment","color_cat",
                  "log_se_enrichment", "aa_position", "aa_ref", "aa_alt", "rif"):=NULL]
 
 #rank highest to lowest by mean enrichment
-setorder(output_table_1A, 'mean_enrichment')
+setorder(output_table, 'mean_enrichment')
 
 #output table
-output_to = paste(here::here(), 'supplemental_materials', 'supplemental_table_1A.csv', sep = "/")
-fwrite(output_table_1A,output_to)
+output_to = paste(here::here(), 'supplemental_materials', 'supplemental_file_3_out.csv', sep = "/")
+fwrite(output_table,output_to)
+
+
+#output raw data for all replicates
+raw_dat <- into_summ
+raw_dat[, c("expt_set", "time_point", "Sample", "gene","mfe","wt","altered","prodonor_seq","synthesis_set",
+         "previous_name","previous_category","rpoB allele type","allele_type_notes","color_cat","aa_position",
+         "aa_ref","aa_alt","V23","V24","i5_index","i7_index","idx1_seq","idx2_seq","5prime_cutadapt","Count_both","total_count_sample"):=NULL]
+#output table
+output_to = paste(here::here(), 'supplemental_materials', 'supplemental_file_3_raw_out.csv', sep = "/")
+fwrite(raw_dat,output_to)
 
 ```
 

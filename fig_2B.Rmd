@@ -94,12 +94,13 @@ h7_triple$genotype = "∆mutS, ∆recJ, ∆sbcB, + CspRecT"
 
 #also scrub fig2B data (beta as SSAP) for plotting
 b22 <- melt_with_fedit[expt_set == 'b22']
-b22[control_status != 'background']
+b22 <- b22[control_status != 'background']
 b22_scrubbed <- copy(b22)
 b22_scrubbed[, well := well_indexed]
 b22_scrubbed[, ssap := "Beta"]
 b22_scrubbed[, genotype := strain_genotype]
 b22_scrubbed[, locus := adapters]
+b22_scrubbed[fraction_edited != NaN]
 b22_scrubbed = b22_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "Count",
                        "Sample_num", "expt_set", "well_indexed", "tx", "editing_timepoint",
                        "control_status", "parent", "strain_genotype", "plas", "adapters", "comment",
@@ -107,8 +108,15 @@ b22_scrubbed = b22_scrubbed[, c("read_id", "total_count", "bc_read", "Sample", "
 
 genotype_rbind = rbind(h7_triple, b22_scrubbed)
 ```
-#explore and output summary statistics
-```{r summarize}
+
+#explore and output raw data and summary stats
+```{r output_and_summarize}
+#export raw data, for supplemental table
+setorder(genotype_rbind, col = genotype)
+output_to = paste(parent_folder, 'supplemental_materials','supplemental_table_1_raw_out.csv', sep = "/")
+fwrite(genotype_rbind,output_to)
+
+
 #aggregated data
 genotype_rbind = na.omit(genotype_rbind, cols="fraction_edited")
 genotype_rbind_means <- genotype_rbind[,
@@ -141,7 +149,7 @@ genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB, + CspRecT") & (loc
 genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB, + CspRecT") & (locus == "rpoB"), mean_fraction_edited] / genotype_rbind_means[(genotype == "∆mutS, ∆recJ, ∆sbcB") & (locus == "rpoB"), mean_fraction_edited]
 ```
 
-## Fig 2B (with csprecT results appended)
+## Fig 2B (with csprecT results)
 ###setup
 ```{r fig_2B_setup}
 #to make Xlabels have multiple lines, instead of comma and space:
@@ -186,7 +194,7 @@ fig2B <- ggplot(genotype_rbind, aes(x=genotype, y=fraction_edited, color=locus))
   labs(
     y = "Fraction Edited",
     color = "Locus") +
-  stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.signif", label.y = c(-1.5, -1, -.5, 0, 0.3)) +
+  stat_compare_means(comparisons = my_comparisons, method = "t.test", label = "p.value", label.y = c(-1.5, -1, -.5, 0, 0.3)) +
   scale_x_discrete(labels = addline_format(x_labels)) +
   theme_linedraw() +
   theme(
