@@ -12,3 +12,4 @@ Population simulations and simulations of editing are performed in Matlab, givin
 
 Alignment and calculation of coverage depth in figures 5B, 5C, and S6B, as well as deriving the "template lengths" depicted in S6A, are performed as described in the Online Methods section. Clarification and example scripting commands are available upon request.
 
+Documentation, Code, and Figures for [High throughput functional variant screens via in-vivo production of single-stranded DNA](https://www.biorxiv.org/content/10.1101/2020.03.05.975441v1.full). 

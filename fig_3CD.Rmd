@@ -303,7 +303,7 @@ ggsave(filename='fig_3C_new2.pdf', plot=fig3c, width=5, height=2.5, units='in', 
 
 ```
 
-#prepare supplemental table 3, list of figure 3D results for rif alleles
+#OPTIONAL list of figure 3D results for rif alleles only, across drug concentrations
 ```{r rif_allele_summary_supp}
 output_table <- binary_summ[mut_class %in% c("Rifampicin Resistance",
                                              "rpoB Allele, unknown effect")]
