@@ -1,0 +1,565 @@
+LOCUS       pBAD>_retron,_RT,_CspRecT_(sc101_cat)        8556 bp    DNA     circular UNA 29-FEB-2020
+DEFINITION  Gibson Assembly of mutL* and terminator (from 291) into pMS_369
+            extraction no rrnB.
+ACCESSION   urn.local...5j-bmf2owc
+VERSION     urn.local...5j-bmf2owc
+KEYWORDS    .
+SOURCE      
+  ORGANISM  .
+FEATURES             Location/Qualifiers
+     terminator      complement(1..85)
+                     /created_by="User"
+                     /label="araC native terminator"
+     primer_bind     1..20
+                     /Sequence="AATGTGCCTGTCAAATGGAC"
+                     /Transferred_From="oDK_052"
+                     /Transferred_Similarity="100.00%"
+                     /label="oDK_052"
+     cds             complement(86..1015)
+                     /codon_start=1
+                     /transl_table=11
+                     /product="araC"
+                     /protein_id="AIU94532.1"
+                     /Transferred_Translation="MQYGQLVSSLNGGSMKSMAEAQNDPLLPGYSF
+                     NAHLVAGLTPIEANGYLDFFIDRPLGMKGYILNLTIRGQGVVKNQGREFVCRPGDILL
+                     FPPGEIHHYGRHPEAREWYHQWVYFRPRAYWHEWLNWPSIFANTGFFRPDEAHQPHFS
+                     DLFGQIINAGQGEGRYSELLAINLLEQLLLRRMEAINESLHPPMDNRVREACQYISDH
+                     LADSNFDIASVAQHVCLSPSRLSHLFRQQLGISVLSWREDQRISQAKLLLSTTRMPIA
+                     TVGRNVGFDDQLYFSRVFKKCTGASPSEFRAGCEEKVNDVAVKLS"
+                     /Transferred_From="pECA102 KM521212"
+                     /Transferred_Similarity="100.00%"
+                     /label="araC CDS"
+     gene            complement(86..964)
+                     /Imported_from="<a
+                     href=""http://wishart.biology.ualberta.ca/PlasMapper"">Pla
+                     sMapper</a>"
+                     /X-Transferred_From="AraC"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="AraC"
+     misc_feature    978..>1281
+                     /created_by="User"
+                     /modified_by="User"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="segment of pBAD_33"
+     regulatory      991..1276
+                     /regulatory_class="promoter"
+                     /note="PBAD promoter"
+                     /Transferred_From="pECA102 KM521212"
+                     /Transferred_Similarity="100.00%"
+                     /label="PBAD promoter regulatory"
+     misc_feature    993..1010
+                     /note="misc_feature; operator O2"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="misc feature; operator O2"
+     misc_feature    994..1009
+                     /Imported_from="<a
+                     href=""http://wishart.biology.ualberta.ca/PlasMapper"">Pla
+                     sMapper</a>"
+                     /X-Transferred_From="araO2 reg; pMS_118 (pKD46)"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_116 (pMA7CR_2.0), pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="araO2 reg"
+                     /note="Geneious type: regulatory sequence"
+     primer_bind     1088..1115
+                     /Sequence="CATTCTGTAACAAAGCGGGACCAAAGCC"
+                     /Transferred_From="oMS_818"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_818"
+     promoter        complement(1115..1143)
+                     /note="Pc promoter; promoter"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="promoter; Pc promoter"
+     misc_feature    complement(1115..1143)
+                     /ApEinfo_revcolor="#b7e6d7"
+                     /ApEinfo_fwdcolor="#b7e6d7"
+                     /X-Transferred_From="pMS_118 (pKD46)"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_116 (pMA7CR_2.0), pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="Pc"
+     primer_bind     1119..1140
+                     /Sequence="ACAAAAACGCGTAACAAAAGTG"
+                     /Transferred_From="oMS_802"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_802"
+     primer_bind     1148..1166
+                     /Sequence="TCACGGCAGAAAAGTCCAC"
+                     /Transferred_From="oMS_806"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_806"
+     misc_feature    1151..1172
+                     /note="misc_feature; operator O1"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="misc feature; operator O1"
+     gene            1203..1241
+                     /Imported_from="<a
+                     href=""http://wishart.biology.ualberta.ca/PlasMapper"">Pla
+                     sMapper</a>"
+                     /X-Transferred_From="AraI1I2; pMS_118 (pKD46)"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_116 (pMA7CR_2.0), pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="AraI1I2"
+     misc_feature    1203..1241
+                     /note="misc_feature; operator I2 + I1"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="misc feature; operator I2 + I1"
+     primer_bind     1213..1272
+                     /Sequence="TATCCATAAGATTAGCGGATCCTACCTGACGCTTTTTATCGCAACTC
+                     TCTACTGTTTCTC"
+                     /Transferred_From="oMS_808"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_808"
+     promoter        1238..1266
+                     /Imported_from="<a
+                     href=""http://wishart.biology.ualberta.ca/PlasMapper"">Pla
+                     sMapper</a>"
+                     /X-Transferred_From="ARA prom"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="ARA prom"
+     promoter        1240..1267
+                     /note="PBAD promoter; promoter"
+                     /Transferred_From="pMS_39 (pTB273) pARA bla p21 plasmid
+                     (modified)"
+                     /Transferred_Similarity="100.00%"
+                     /label="promoter; PBAD promoter"
+     misc_feature    1240..1267
+                     /ApEinfo_revcolor="#ff9ccd"
+                     /ApEinfo_fwdcolor="#ff9ccd"
+                     /X-Transferred_From="pMS_118 (pKD46)"
+                     /X-Transferred_Similarity="100.00%"
+                     /Transferred_From="pMS_116 (pMA7CR_2.0), pMS_118 (pKD46)"
+                     /Transferred_Similarity="100.00%"
+                     /label="ParaB"
+     primer_bind     complement(1257..1281)
+                     /Sequence="ACGGGTATGGAGAAACAGTAGAGAG"
+                     /Transferred_From="oMS_801"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_801"
+     misc_feature    1289..1290
+                     /label="AAGAATTCATTAAAGAGGAGAAAGGTACCTAGCTATGTTAGGAGCGTCTT
+                     TGATAGAAAGACACTTGACCGATTGCGGCTTGAGATTATGAATTTTGAAAACCGTAGA
+                     AAATCAACATTTAACTATGATAAGATTCCGT"
+                     /note="Geneious type: Editing History Deletion"
+     misc_RNA        1290..1523
+                     /product="msr"
+                     /function="primer for the Ec86 RT"
+                     /modified_by="Max_Schubert"
+                     /label="msr86"
+     inv_rep         1291..1302
+                     /label="a2"
+     Branched_G      1303
+                     /label="Branched G"
+     primer_bind     1328..1348
+                     /Sequence="CCTCTGGATGTTGTTTCGGCA"
+                     /Transferred_From="oMS_0409"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0409"
+     primer_bind     complement(1329..1348)
+                     /Sequence="TGCCGAAACAACATCCAGAG"
+                     /Transferred_From="oMS_539"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_539"
+     primer_bind     1350..1371
+                     /Sequence="CCTGCATTGAATCTGAGTTACT"
+                     /Transferred_From="oMS_545"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_545"
+     msd             complement(1361..1506)
+                     /created_by="Max_Schubert"
+                     /label="msd"
+     primer_bind     1361..1389
+                     /Sequence="TCTGAGTTACTGTCTGTTTTCCTGAATTC"
+                     /Transferred_From="oMS_0416"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0416"
+     primer_bind     complement(1362..1383)
+                     /Sequence="AGGAAAACAGACAGTAACTCAG"
+                     /Transferred_From="oMS_532"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_532"
+     primer_bind     complement(1366..1389)
+                     /Sequence="GAATTCAGGAAAACAGACAGTAAC"
+                     /Transferred_From="oMS_486"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_486"
+     misc_feature    1390..1479
+                     /Original_Bases="TGTCGTTGGTGACGTAATCGGTAAATACCATCCCCATGGTG
+                     ACTTGGCCGTCTATGACACGATCGTCCGCATGGCGCAGCCATTCTCGCT"
+                     /label="TGTCGTTGGTGACGTAATCGGTAAATACCATCCCCATGGTGACTTGGCCG
+                     TCTATGACACGATCGTCCGCATGGCGCAGCCATTCTCGCT"
+                     /note="Geneious type: Editing History Replacement"
+     misc_feature    complement(1390..1479)
+                     /created_by="Max_Schubert"
+                     /label="insert donor here (reverse orientation)"
+     primer_bind     complement(1480..1506)
+                     /Sequence="GTCAGAAAAAACGGGTTTCCTGAATTC"
+                     /Transferred_From="oMS_0417"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0417"
+     primer_bind     1480..1502
+                     /Sequence="GAATTCAGGAAACCCGTTTTTTC"
+                     /Transferred_From="oMS_487"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_487"
+     primer_bind     1485..1513
+                     /Sequence="CAGGAAACCCGTTTTTTCTGACGTAAGGG"
+                     /Transferred_From="oMS_623"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_623"
+     primer_bind     complement(1502..1519)
+                     /Sequence="TGCGCACCCTTACGTCAG"
+                     /Transferred_From="oMS_757"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_757"
+     primer_bind     complement(1504..1523)
+                     /Sequence="AAGTTGCGCACCCTTACGTC"
+                     /Transferred_From="oMS_668"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_668"
+     primer_bind     complement(1504..1523)
+                     /Sequence="AAGTTGCGCACCCTTACGTC"
+                     /Transferred_From="oMS_696"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_696"
+     primer_bind     1507..1528
+                     /Sequence="GTAAGGGTGCGCAACTTTCATG"
+                     /Transferred_From="oMS_570"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_570"
+     inv_rep         complement(1508..1519)
+                     /label="a1"
+     cds             1526..2488
+                     /locus_tag="ECD_00831"
+                     /codon_start=1
+                     /transl_table=11
+                     /product="retron EC86 RNA-directed DNA polymerase-like
+                     protein"
+                     /protein_id="ACT42726.1"
+                     /db_xref="GI:253977056"
+                     /label="retron EC86 RNA-directed DNA polymerase-like
+                     protein CDS"
+     primer_bind     1526..1551
+                     /Sequence="ATGAAATCCGCTGAATATTTGAACAC"
+                     /Transferred_From="oMS_533"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_533"
+     primer_bind     1588..1610
+                     /Sequence="CAATTTGCATGACATGTCTAAGG"
+                     /Transferred_From="oMS_540"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_540"
+     primer_bind     complement(1588..1610)
+                     /Sequence="CCTTAGACATGTCATGCAAATTG"
+                     /Transferred_From="oMS_525"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_525"
+     misc_feature    2119
+                     /Original_Bases="T"
+                     /label="T"
+                     /note="Geneious type: Editing History Replacement"
+     misc_difference 2119
+                     /created_by="User"
+                     /label="synonymous mutation?"
+     primer_bind     complement(2464..2487)
+                     /Sequence="TAGGTCTTCGCTTTATTTAAAGGG"
+                     /Transferred_From="oMS_522"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_522"
+     primer_bind     complement(2465..2486)
+                     /Sequence="AGGTCTTCGCTTTATTTAAAGG"
+                     /Transferred_From="oMS_559"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_559"
+     misc_difference complement(2489..2520)
+                     /created_by="User"
+                     /label=933
+     gene            2527..3339
+                     /created_by="Tim"
+                     /modified_by="Max_Schubert"
+                     /label="CspRecT"
+     unsure          complement(2820..2828)
+                     /created_by="User"
+                     /label="dnaA box"
+     misc_feature    3367..5214
+                     /note="mutL E32K"
+                     /label="mutL E32K"
+     terminator      5215..5340
+                     /created_by="Max_Schubert"
+                     /modified_by="Max_Schubert"
+                     /label="native terminator of lambda-RED"
+     unsure          complement(5344..5352)
+                     /created_by="User"
+                     /label="dnaA box"
+     primer_bind     5912..5938
+                     /Sequence="AAGAACCTCAGATCCTTCCGTATTTAG"
+                     /Transferred_From="oMS_0460"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0460"
+     CDS             complement(5919..6869)
+                     /created_by="User"
+                     /label="repA101 CDS"
+     primer_bind     complement(6062..6094)
+                     /Sequence="GACTAAGAAAAACACTACACGATGCTTTAACTG"
+                     /Transferred_From="oMS_813"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_813"
+     primer_bind     6095..6124
+                     /Sequence="CGTTACGTAGGTAGGAATCTGATGTAATGG"
+                     /Transferred_From="oMS_812"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_812"
+     primer_bind     6154..6175
+                     /Sequence="ATCTGGTTGTTCTCAAGTTCGG"
+                     /Transferred_From="oMS_918"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_918"
+     primer_bind     6594..6618
+                     /Sequence="AAAGCCTTTAACCAAAGGATTCCTG"
+                     /Transferred_From="oMS_920"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_920"
+     primer_bind     complement(6594..6618)
+                     /Sequence="CAGGAATCCTTTGGTTAAAGGCTTT"
+                     /Transferred_From="oMS_916"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_916"
+     unsure          complement(6871..7127)
+                     /created_by="User"
+                     /label="origin_stuff"
+     primer_bind     complement(6961..6983)
+                     /Sequence="GTCTAGCAGAATTTACAGATACC"
+                     /Transferred_From="oMS_919"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_919"
+     primer_bind     complement(7017..7037)
+                     /Sequence="GGTCTAGCGGAATTTACAGAG"
+                     /Transferred_From="oMS_917"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_917"
+     unsure          complement(7128..7136)
+                     /created_by="User"
+                     /label="dnaA box"
+     regulatory      7625..7730
+                     /regulatory_class="terminator"
+                     /note="T0 terminator; terminator T0"
+                     /Transferred_From="KM521210, p ECG_MC3 KM521211 (mf-lon
+                     mcherry_pdt3)"
+                     /Transferred_Similarity="100.00%"
+                     /label="T0 terminator regulatory; terminator T0
+                     regulatory"
+     primer_bind     7702..7725
+                     /Sequence="TTACTGGATCTATCAACAGGAGTC"
+                     /Transferred_From="oMS_0350"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0350"
+     primer_bind     complement(7746..7778)
+                     /Sequence="GGGGCGTAATTGTCTAACAATTCGTTCAAGCCG"
+                     /Transferred_From="oDK_049"
+                     /Transferred_Similarity="100.00%"
+                     /label="oDK_049"
+     primer_bind     complement(7748..7768)
+                     /Sequence="TGTCTAACAATTCGTTCAAGC"
+                     /Transferred_From="oMS_0337"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0337"
+     primer_bind     7761..7785
+                     /Sequence="GTTAGACAATTACGCCCCGCCCTGC"
+                     /Transferred_From="oDK_050"
+                     /Transferred_Similarity="100.00%"
+                     /label="oDK_050"
+     misc_feature    complement(7770..8556)
+                     /label="CmR"
+                     /note="Geneious type: Antibiotic Resistance"
+     marker          complement(7770..8429)
+                     /label="CAT marker"
+     cds             complement(7770..8429)
+                     /codon_start=1
+                     /transl_table=11
+                     /product="CmR"
+                     /protein_id="ADC42093.1"
+                     /db_xref="GI:288187151"
+                     /label="CmR CDS"
+     primer_bind     7927..7948
+                     /Sequence="GCGAAGAAGTTGTCCATATTGG"
+                     /Transferred_From="oMS_0383"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0383"
+     unsure          complement(8246..8254)
+                     /created_by="User"
+                     /label="dnaA box"
+     primer_bind     complement(8387..8413)
+                     /Sequence="CTGGATATACCACCGTTGATATATCCC"
+                     /Transferred_From="oMS_0382"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0382"
+     primer_bind     complement(8474..8495)
+                     /Sequence="GAAATAAGATCACTACCGGGCG"
+                     /Transferred_From="oMS_0222"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_0222"
+     primer_bind     8474..8495
+                     /Sequence="CGCCCGGTAGTGATCTTATTTC"
+                     /Transferred_From="oMS_521"
+                     /Transferred_Similarity="100.00%"
+                     /label="oMS_521"
+ORIGIN      
+        1 aatgtgcctg tcaaatggac gaagcaggga ttctgcaaac cctatgctac tccgtcaagc
+       61 cgtcaattgt ctgattcgtt accaattatg acaacttgac ggctacatca ttcacttttt
+      121 cttcacaacc ggcacggaac tcgctcgggc tggccccggt gcatttttta aatacccgcg
+      181 agaaatagag ttgatcgtca aaaccaacat tgcgaccgac ggtggcgata ggcatccggg
+      241 tggtgctcaa aagcagcttc gcctggctga tacgttggtc ctcgcgccag cttaagacgc
+      301 taatccctaa ctgctggcgg aaaagatgtg acagacgcga cggcgacaag caaacatgct
+      361 gtgcgacgct ggcgatatca aaattgctgt ctgccaggtg atcgctgatg tactgacaag
+      421 cctcgcgtac ccgattatcc atcggtggat ggagcgactc gttaatcgct tccatgcgcc
+      481 gcagtaacaa ttgctcaagc agatttatcg ccagcagctc cgaatagcgc ccttcccctt
+      541 gcccggcgtt aatgatttgc ccaaacaggt cgctgaaatg cggctggtgc gcttcatccg
+      601 ggcgaaagaa ccccgtattg gcaaatattg acggccagtt aagccattca tgccagtagg
+      661 cgcgcggacg aaagtaaacc cactggtgat accattcgcg agcctccgga tgacgaccgt
+      721 agtgatgaat ctctcctggc gggaacagca aaatatcacc cggtcggcaa acaaattctc
+      781 gtccctgatt tttcaccacc ccctgaccgc gaatggtgag attgagaata taacctttca
+      841 ttcccagcgg tcggtcgata aaaaaatcga gataaccgtt ggcctcaatc ggcgttaaac
+      901 ccgccaccag atgggcatta aacgagtatc ccggcagcag gggatcattt tgcgcttcag
+      961 ccatactttt catactcccg ccattcagag aagaaaccaa ttgtccatat tgcatcagac
+     1021 attgccgtca ctgcgtcttt tactggctct tctcgctaac caaaccggta accccgctta
+     1081 ttaaaagcat tctgtaacaa agcgggacca aagccatgac aaaaacgcgt aacaaaagtg
+     1141 tctataatca cggcagaaaa gtccacattg attatttgca cggcgtcaca ctttgctatg
+     1201 ccatagcatt tttatccata agattagcgg atcctacctg acgcttttta tcgcaactct
+     1261 ctactgtttc tccatacccg tttaattaaa tgcgcaccct tagcgagagg tttatcatta
+     1321 aggtcaacct ctggatgttg tttcggcatc ctgcattgaa tctgagttac tgtctgtttt
+     1381 cctgaattcn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn
+     1441 nnnnnnnnnn nnnnnnnnnn nnnnnnnnnn nnnnnnnnng aattcaggaa acccgttttt
+     1501 tctgacgtaa gggtgcgcaa ctttcatgaa atccgctgaa tatttgaaca cttttagatt
+     1561 gagaaatctc ggcctacctg tcatgaacaa tttgcatgac atgtctaagg cgactcgcat
+     1621 atctgttgaa acacttcggt tgttaatcta tacagctgat tttcgctata ggatctacac
+     1681 tgtagaaaag aaaggcccag agaagagaat gagaaccatt taccaacctt ctcgagaact
+     1741 taaagcctta caaggatggg ttctacgtaa cattttagat aaactgtcgt catctccttt
+     1801 ttctattgga tttgaaaagc accaatctat tttgaataat gctaccccgc atattggggc
+     1861 aaactttata ctgaatattg atttggagga ttttttccca agtttaactg ctaacaaagt
+     1921 ttttggagtg ttccattctc ttggttataa tcgactaata tcttcagttt tgacaaaaat
+     1981 atgttgttat aaaaatctgc taccacaagg tgctccatca tcacctaaat tagctaatct
+     2041 aatatgttct aaacttgatt atcgtattca gggttatgca ggtagtcggg gcttgatata
+     2101 tacgagatat gccgatgacc tcaccttatc tgcacagtct atgaaaaagg ttgttaaagc
+     2161 acgtgatttt ttattttcta taatcccaag tgaaggattg gttattaact caaaaaaaac
+     2221 ttgtattagt gggcctcgta gtcagaggaa agttacaggt ttagttattt cacaagagaa
+     2281 agttgggata ggtagagaaa aatataaaga aattagagca aagatacatc atatattttg
+     2341 cggtaagtct tctgagatag aacacgttag gggatggttg tcatttattt taagtgtgga
+     2401 ttcaaaaagc cataggagat taataactta tattagcaaa ttagaaaaaa aatatggaaa
+     2461 gaacccttta aataaagcga agacctagga tcgaaataat tttgtttaac tttaaggagg
+     2521 tttggaatga accaaatcgt gaagttcact gacgactctg gcctggcggt tcaagttact
+     2581 ccagacgatg ttcgccgtta tatctgtgag aacgctactg aaaaagaggt gggcctcttt
+     2641 ctgcaactct gtcagactca acgtctgaat ccgtttgtga aagacgctta cctggtgaaa
+     2701 tacggcggtg ctccagcttc tatgattact tcctatcaag tttttaaccg tcgcgcgtgt
+     2761 cgtgatgcta actatgatgg tatcaaatct ggtgtggttg ttctgcgtga cggtgatgtt
+     2821 gtgcataaac gtggtgctgc gtgctacaaa aaggcgggtg aggagctcat cggtggttgg
+     2881 gcggaagttc gctttaagga tggccgcgag actgcgtatg ctgaggtggc gctcgacgac
+     2941 tattccaccg gcaaatctaa ttgggcgaaa atgccgggtg ttatgatcga aaaatgcgcg
+     3001 aaggctgctg cttggcgcct cgcgttcccg gacacttttc agggcatgta cgctgcggag
+     3061 gaaatggatc aagcgcaaca gccagaacag gtgcgcgctc aggcggagca accagtggat
+     3121 ctccagccaa tccgcgaact cttcaagcca tattgcgaac acttcggcat cactccggct
+     3181 gagggtatga ctgctgtttg tggtgcggtg ggcgctgaag gcatgcactc tatgaccgag
+     3241 cagcaagctc gccgtgctcg cgcttggatg gaggaagaaa tggctgcgcc agctgtggaa
+     3301 gcggagtatg aggttgttga cgagggcgag gtgttttaaa tggcgatgag agaggaggat
+     3361 tacaaaatgc caattcaggt cttaccgcca caactggcga accagattgc cgcaggtgag
+     3421 gtggtcgagc gacctgcgtc ggtagtcaaa gaactagtga aaaacagcct cgatgcaggt
+     3481 gcgacgcgta tcgatattga tatcgaacgc ggtggggcga aacttatccg cattcgtgat
+     3541 aacggctgcg gtatcaaaaa agatgagctg gcgctggcgc tggctcgtca tgccaccagt
+     3601 aaaatcgcct ctctggacga tctcgaagcc attatcagcc tgggctttcg cggtgaggcg
+     3661 ctggcgagta tcagttcggt ttcccgcctg acgctcactt cacgcaccgc agaacagcag
+     3721 gaagcctggc aggcctatgc cgaagggcgc gatatgaacg tgacggtaaa accggcggcg
+     3781 catcctgtgg ggacgacgct ggaggtgctg gatctgttct acaacacccc ggcgcggcgc
+     3841 aaattcctgc gcaccgagaa aaccgaattt aaccacattg atgagatcat ccgccgcatt
+     3901 gcgctggcgc gtttcgacgt cacgatcaac ctgtcgcata acggtaaaat tgtgcgtcag
+     3961 taccgcgcag tgccggaagg cgggcaaaaa gaacggcgct taggcgcgat ttgcggcacc
+     4021 gcttttcttg aacaagcgct ggcgattgaa tggcaacacg gcgatctcac gctacgcggc
+     4081 tgggtggccg atccaaatca caccacgccc gcactggcag aaattcagta ttgctacgtg
+     4141 aacggtcgca tgatgcgcga tcgcctgatc aatcacgcga tccgccaggc ctgcgaagac
+     4201 aaactggggg ccgatcagca accggcattt gtgttgtatc tggagatcga cccacatcag
+     4261 gtggacgtca acgtgcaccc cgccaaacac gaagtgcgtt tccatcagtc gcgtctggtg
+     4321 catgatttta tctatcaggg cgtgctgagc gtgctacaac agcaactgga aacgccgcta
+     4381 ccgctggacg atgaacccca acctgcaccg cgttccattc cggaaaaccg cgtggcggcg
+     4441 gggcgcaatc actttgcaga accggcagct cgtgagccgg tagctccgcg ctacactcct
+     4501 gcgccagcat caggcagtcg tccggctgcc ccctggccga atgcgcagcc aggctaccag
+     4561 aaacagcaag gtgaagtgta tcgccagctt ttgcaaacgc ccgcgccgat gcaaaaatta
+     4621 aaagcgccgg aaccgcagga acctgcactt gcggcgaaca gtcagagttt tggtcgggta
+     4681 ctgactatcg tccattccga ctgtgcgttg ctggagcgcg acggcaacat ttcactttta
+     4741 tccttgccag tggcagaacg ttggctgcgt caggcacaat tgacgccggg tgaagcgccc
+     4801 gtttgcgccc agccgctgct gattccgttg cggctaaaag tttctgccga agaaaaatcg
+     4861 gcattagaaa aagcgcagtc tgccctggcg gaattgggta ttgatttcca gtcagatgca
+     4921 cagcatgtga ccatcagggc agtgccttta cccttacgcc aacaaaattt acaaatcttg
+     4981 attcctgaac tgataggcta cctggcgaag cagtccgtat tcgaacctgg caatattgcg
+     5041 cagtggattg cacgaaatct gatgagcgaa catgcgcagt ggtcaatggc acaggccata
+     5101 accctgctgg cggacgtgga acggttatgt ccgcaacttg tgaaaacgcc gccgggtggt
+     5161 ctgttacaat ctgttgattt acatccggcg ataaaagccc tgaaagatga gtgaaatggc
+     5221 gatgagcatc ctcacgataa tatccgggta ggcgcaatca ctttcgtcta ctccgttaca
+     5281 aagcgaggct gggtatttcc cggcctttct gttatccgaa atccactgaa agcacagcgg
+     5341 agatgtgtat aagagacagc tgcctcctga gtaggacaaa tccgccgccc tagacctagg
+     5401 gtacgggttt tgctgcccgc aaacgggctg ttctggtgtt gctagtttgt tatcagaatc
+     5461 gcagatccgg cttcagccgg tttgccggct gaaagcgcta tttcttccag aattgccatg
+     5521 attttttccc cacgggaggc gtcactggct cccgtgttgt cggcagcttt gattcgataa
+     5581 gcagcatcgc ctgtttcagg ctgtctatgt gtgactgttg agctgtaaca agttgtctca
+     5641 ggtgttcaat ttcatgttct agttgctttg ttttactggt ttcacccgtt ctattaggtg
+     5701 ttacatgctg ttcatctgtt acattgtcga tctgttcatg gtgaacagct ttgaatgcac
+     5761 caaaaactcg taaaagctct gatgtatcta tcttttttac accgttttca tctgtgcata
+     5821 tggacagttt tccctttgat atgtaacggt gaacagttgt tctacttttg tttgttagtc
+     5881 ttgatgcttc actgatagat acaagagcca taagaacctc agatccttcc gtatttagcc
+     5941 agtatgttct ctagtgtggt tcgttgtttt tgcgtgagcc atgagaacga accattgaga
+     6001 tcatacttac tttgcatgtc actcaaaaat tttgcctcaa aactggtgag ctgaattttt
+     6061 gcagttaaag catcgtgtag tgtttttctt agtccgttac gtaggtagga atctgatgta
+     6121 atggttgttg gtattttgtc accattcatt tttatctggt tgttctcaag ttcggttacg
+     6181 agatccattt gtctatctag ttcaacttgg aaaatcaacg tatcagtcgg gcggcctcgc
+     6241 ttatcaacca ccaatttcat attgctgtaa gtgtttaaat ctttacttat tggtttcaaa
+     6301 acccattggt taagcctttt aaactcatgg tagttatttt caagcattaa catgaactta
+     6361 aattcatcaa ggctaatctc tatatttgcc ttgtgagttt tcttttgtgt tagttctttt
+     6421 aataaccact cataaatcct catagagtat ttgttttcaa aagacttaac atgttccaga
+     6481 ttatatttta tgaatttttt taactggaaa agataaggca atatctcttc actaaaaact
+     6541 aattctaatt tttcgcttga gaacttggca tagtttgtcc actggaaaat ctcaaagcct
+     6601 ttaaccaaag gattcctgat ttccacagtt ctcgtcatca gctctctggt tgctttagct
+     6661 aatacaccat aagcattttc cctactgatg ttcatcatct gagcgtattg gttataagtg
+     6721 aacgataccg tccgttcttt ccttgtaggg ttttcaatcg tggggttgag tagtgccaca
+     6781 cagcataaaa ttagcttggt ttcatgctcc gttaagtcat agcgactaat cgctagttca
+     6841 tttgctttga aaacaactaa ttcagacata catctcaatt ggtctaggtg attttaatca
+     6901 ctataccaat tgagatgggc tagtcaatga taattactag tccttttcct ttgagttgtg
+     6961 ggtatctgta aattctgcta gacctttgct ggaaaacttg taaattctgc tagaccctct
+     7021 gtaaattccg ctagaccttt gtgtgttttt tttgtttata ttcaagtggt tataatttat
+     7081 agaataaaga aagaataaaa aaagataaaa agaatagatc ccagccctgt gtataactca
+     7141 ctactttagt cagttccgca gtattacaaa aggatgtcgc aaacgctgtt tgctcctcta
+     7201 caaaacagac cttaaaaccc taaaggctta agtagcaccc tcgcaagctc gggcaaatcg
+     7261 ctgaatattc cttttgtctc cgaccatcag gcacctgagt cgctgtcttt ttcgtgacat
+     7321 tcagttcgct gcgctcacgg ctctggcagt gaatgggggt aaatggcact acaggcgcct
+     7381 tttatggatt catgcaagga aactacccat aatacaagaa aagcccgtca cgggcttctc
+     7441 agggcgtttt atggcgggtc tgctatgtgg tgctatctga ctttttgctg ttcagcagtt
+     7501 cctgccctct gattttccag tctgaccact tcggattatc ccgtgacagg tcattcagac
+     7561 tggctaatgc acccagtaag gcagcggtat catcaacagg cttacccgtc ttactgtccc
+     7621 tagtgcttgg attctcacca ataaaaaacg cccggcggca accgagcgtt ctgaacaaat
+     7681 ccagatggag ttctgaggtc attactggat ctatcaacag gagtccaagc gagctcgata
+     7741 tccgtcggct tgaacgaatt gttagacaat tacgccccgc cctgccactc atcgcagtac
+     7801 tgttgtaatt cattaagcat tctgccgaca tggaagccat cacaaacggc atgatgaacc
+     7861 tgaatcgcca gcggcatcag caccttgtcg ccttgcgtat aatatttgcc catggtgaaa
+     7921 acgggggcga agaagttgtc catattggcc acgtttaaat caaaactggt gaaactcacc
+     7981 cagggattgg ctgagacgaa aaacatattc tcaataaacc ctttagggaa ataggccagg
+     8041 ttttcaccgt aacacgccac atcttgcgaa tatatgtgta gaaactgccg gaaatcgtcg
+     8101 tggtattcac tccagagcga tgaaaacgtt tcagtttgct catggaaaac ggtgtaacaa
+     8161 gggtgaacac tatcccatat caccagctca ccgtctttca ttgccatacg gaattccgga
+     8221 tgagcattca tcaggcgggc aagaatgtga ataaaggccg gataaaactt gtgcttattt
+     8281 ttctttacgg tctttaaaaa ggccgtaata tccagctgaa cggtctggtt ataggtacat
+     8341 tgagcaactg actgaaatgc ctcaaaatgt tctttacgat gccattggga tatatcaacg
+     8401 gtggtatatc cagtgatttt tttctccatt ttagcttcct tagctcctga aaatctcgat
+     8461 aactcaaaaa atacgcccgg tagtgatctt atttcattat ggtgaaagtt ggaacctctt
+     8521 acgtgccgat caacgtctca ttttcgccag atatcg
+//
