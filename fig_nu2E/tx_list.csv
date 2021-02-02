@@ -1,0 +1,25 @@
+tx,desc,strain,plasmid,MMR,locus_allele,donor_len,controltype
+1,rpoB_snp_70,446,pMS_474,mutL*,rpoB_wide,70,
+2,rpoB_snp_90,446,pMS_475,mutL*,rpoB_wide,90,
+3,rpoB_snp_120,446,pMS_476,mutL*,rpoB_wide,120,
+4,rpoB_snp_150,446,pMS_477,mutL*,rpoB_wide,150,
+5,rpoB_snp_180,446,pMS_478,mutL*,rpoB_wide,180,
+6,rpoB_90_Het,446,pMS_479,mutL*,rpoB_het_full,90,
+7,rpoB_120_Het,446,pMS_480,mutL*,rpoB_het_full,120,
+8,gyrA_snp_70,446,pMS_481,mutL*,gyrA_ultrawide,70,
+9,gyrA_snp_90,446,pMS_482,mutL*,gyrA_ultrawide,90,
+10,gyrA_snp_120,446,pMS_483,mutL*,gyrA_ultrawide,120,
+11,gyrA_snp_150,446,pMS_484,mutL*,gyrA_ultrawide,150,
+12,gyrA_snp_180,446,pMS_485,mutL*,gyrA_ultrawide,180,
+13,gyrA_90_Het,446,pMS_486,mutL*,gyrA_het_full,90,
+14,gyrA_120_Het,446,pMS_487,mutL*,gyrA_het_full,120,
+15,coaD_100_6xhis,446,pMS_488,intact,coaD_his,100,
+16,hda_100_6xhis,446,pMS_489,intact,hda_his,100,
+17,hda_110_strep,446,pMS_490,intact,hda_strep,110,
+18,coaD_110_strep,446,pMS_491,intact,coaD_strep,110,
+19,is_5 inactivate retron (PF020 mutL* pBAD SC101),446,pMS_441,mutL*,is5_inactivate,90,
+20,"pBAD> rpoB1547A.G, with PF020, mutL* (sc101-cat)",446,pMS_375,mutL*,rpoB_plus,90,positive_control
+21,"pBAD> gyrA, with PF020, mutL* (sc101-cat)",446,pMS_376,mutL*,gyrA_plus,90,positive_control
+24,rif dRT control (no mutL),453,pMS_425,mutS-,rpoB_plus,90,negative_control
+25,rif dRT control (no mutL),446,pMS_425,WT,rpoB_plus,90,negative_control
+2100,"pBAD> gyrA, with PF020, mutL* (sc101-cat) offtarget",446,pMS_376,mutL*,rpoB_wide,90,offtarget_control
