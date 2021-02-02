@@ -34,7 +34,7 @@ data_dir = parent_folder
 analysis_dir = parent_folder
 
 #data
-edit_data_name = "ZZ2_merged_bins"
+edit_data_name = "ZZ2_merged_bins_2"
 edit_data_file = paste(data_dir, edit_data_name, sep = "/")
 edit_data_dt <- data.table(fread(edit_data_file))
 edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
