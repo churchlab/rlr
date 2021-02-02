@@ -37,6 +37,13 @@ snp_data_dt <- data.table(fread(snp_data_file))
 #remove SNPs flagged for known issues, like low coverage, low mapping quality, or nonunique alignments
 snp_data_dt= snp_data_dt[VARIANT_SET_LABEL == '[None]']
 snp_data_dt= snp_data_dt[DP > 5]
+snp_data_dt= snp_data_dt[INFO_AF > 0.85]
+
+#remove snps in the araBAD,C or bioB regions, which are deleted and/or plasmid-borne, causing artifacts
+snp_data_dt= snp_data_dt[POSITION < 67500 | POSITION > 71300]
+snp_data_dt= snp_data_dt[POSITION < 807000 | POSITION > 887500]
+
+
 
 
 #trim extraneous columns
@@ -49,7 +56,7 @@ snp_data_dt[, c("VARIANT_SET_LABEL", "INFO_PQR", "INFO_QR", "INFO_NS", "INFO_ODD
                    "INFO_AB",  "INFO_EFF_TRLEN", "INFO_SAF", "INFO_EFF_AA", "INFO_RPL",  "INFO_EFF_WARN",
                    "INFO_EFF_ERR", "INFO_EFF_GT", "INFO_EFF_CLASS", "INFO_MEANALT", "INFO_EFF_RANK",
                    "INFO_EFF_CODING", "INFO_EFF_TR", "PHRED_ENCODING", "CHROMOSOME", "INFO_DP",
-                   "INFO_NUMALT", "INFO_AN") := NULL]
+                   "INFO_NUMALT", "INFO_AN", "INFO_LEN", "IS_HET", "INFO_EFF_BIOTYPE") := NULL]
 
 
 ```
@@ -64,19 +71,18 @@ mutlist_453 = snp453$POSITION
 
 ####### DBG incomplete- remove all muts with position found in 453 or 446
 
-snp446new = snp446[POSITION %IN% mutlist_446]
+#snp446new = snp446[POSITION %IN% mutlist_446]
 
 ```
 
 
-```{r}
-
-#possibly also clean up mutations intended, or in retron donors
-
+```{r further_filter_variants}
 #remove SNPs altered intentionally in ancestral strain, or present in retron donors
 snp_data_dt= snp_data_dt[POSITION != 2082767] #intentional sbcB
 snp_data_dt= snp_data_dt[POSITION != 2082772] #intentional sbcB
 snp_data_dt= snp_data_dt[POSITION != 3038080] #intentional recJ
+
+#remove SNPs aberrantly called 
 
 ```
 

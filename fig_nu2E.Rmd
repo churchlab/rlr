@@ -96,7 +96,17 @@ annotated_dt[, is_alt := (bc_read == alt)]
 
 #of sequences matching ref or alt, what fraction is edited
 #PAY ATTENTION TO THE "BY" here!!!! it's critical for assigning values to the appropriate experiments
-annotated_fedit <- annotated_dt[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='uniq'][is_ref == TRUE]
+annotated_dt <- annotated_dt[,all_count := sum(Count), by = 'uniq']
+annotated_fedit <- annotated_dt[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='uniq']
+annotated_fedit <- annotated_fedit[,ref_alt_count := sum(Count), by = 'uniq'][is_ref == TRUE] #also trimmed table to one row per uniq
+annotated_fedit <- annotated_fedit[,pct_ref_alt := ref_alt_count/all_count]
+
+
+annotated_fedit
+
+###DBG i also don't understand how fraction_edited could change based on if we are looking at ref or alt????
+
+
 #annotated_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
 
 ```
@@ -139,6 +149,7 @@ current = annotated_fedit[locus_allele %in% c("rpoB_wide", "gyrA_ultrawide", "rp
 current = current[donor_len == 90]
 current = current[controltype != "offtarget_control"] 
 current = current[controltype != "negative_control"]
+current = current[timepoint == 1]
 
 
 fig_compare <- ggplot(current, aes(x= controltype, y=fraction_edited, color=locus_allele)) + 
@@ -150,9 +161,9 @@ fig_compare <- ggplot(current, aes(x= controltype, y=fraction_edited, color=locu
   scale_y_continuous(breaks = c(.5, .6, .7, .8, .9),
                      labels = c("50%","60%", "70%", "80%", "90%")) +
   labs(
-    y = "Fraction Edited") + #+
-  facet_grid(~timepoint, scales = 'free_x', space = 'free_x',
-             switch = 'both')  #+ #scales='free_x'
+    y = "Fraction Edited")  #+
+  #facet_grid(~timepoint, scales = 'free_x', space = 'free_x',
+  #           switch = 'both')  #+ #scales='free_x'
   #scale_colour_manual(values = color_2d) +
   #theme(
   #  axis.text.x = element_text(angle = 60, vjust = 1, hjust=1,
