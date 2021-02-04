@@ -37,7 +37,7 @@ snp_data_dt <- data.table(fread(snp_data_file))
 #remove SNPs flagged for known issues, like low coverage, low mapping quality, or nonunique alignments
 snp_data_dt= snp_data_dt[VARIANT_SET_LABEL == '[None]']
 snp_data_dt= snp_data_dt[DP > 5]
-snp_data_dt= snp_data_dt[INFO_AF > 0.85]
+snp_data_dt= snp_data_dt[AF > 0.85]
 
 #remove snps in the araBAD,C or bioB regions, which are deleted and/or plasmid-borne, causing artifacts
 snp_data_dt= snp_data_dt[POSITION < 67500 | POSITION > 71300]
@@ -63,6 +63,9 @@ snp_data_dt[, c("VARIANT_SET_LABEL", "INFO_PQR", "INFO_QR", "INFO_NS", "INFO_ODD
 
 ```{r filter_parent_variants}
 snp446 = snp_data_dt[EXPERIMENT_SAMPLE_LABEL == "446"]
+
+
+
 snp453 = snp_data_dt[EXPERIMENT_SAMPLE_LABEL == "453"]
 
 mutlist_446 = snp446$POSITION
@@ -71,7 +74,7 @@ mutlist_453 = snp453$POSITION
 
 ####### DBG incomplete- remove all muts with position found in 453 or 446
 
-#snp446new = snp446[POSITION %IN% mutlist_446]
+snp_data_dt_noparent = snp_data_dt[!(POSITION %in% c(mutlist_446,mutlist_453))]
 
 ```
 
@@ -84,7 +87,18 @@ snp_data_dt= snp_data_dt[POSITION != 3038080] #intentional recJ
 
 #remove SNPs aberrantly called 
 
+
+#more filtering
+
 ```
+
+```{r count muts}
+
+
+snp_data_dt_noparent[ , mut_count := .N, by = POSITION]
+
+```
+
 
 
 ```{r pressure, echo=FALSE}
