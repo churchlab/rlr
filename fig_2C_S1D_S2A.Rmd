@@ -1,5 +1,5 @@
 ---
-title: "fig_2CE_and_s5B"
+title: "fig_2C_S1D_S2A"
 author: "Max Schubert"
 date: "1/26/2020"
 output: html_document
@@ -16,7 +16,7 @@ require(ggplot2)
 require(data.table)
 require(scales)
 
-parent_folder <- here::here('fig_2CE_and_S5B')
+parent_folder <- here::here('fig_2C_S1D_S2A')
 
 source(here::here('constants.R'))
 ```

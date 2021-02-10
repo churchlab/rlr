@@ -1,0 +1,218 @@
+---
+title: "fig_s4_mutcount"
+author: "Max Schubert"
+date: "2/2/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#library(dplyr)
+
+library(ggbeeswarm) #first install.packages("ggbeeswarm")
+
+# mkdir fig_muts
+parent_folder <- here::here('supplemental_figures/fig_s4')
+```
+
+
+```{r get_variants}
+#variants
+snp_data_name = "zz4_variants_GT2.csv" #variants with GT = 2 flag, high confidence
+snp_data_file = paste(parent_folder, snp_data_name, sep = "/")
+snp_data_dt <- data.table(fread(snp_data_file))
+
+
+#remove SNPs flagged for known issues, like low coverage, low mapping quality, or nonunique alignments
+snp_data_dt= snp_data_dt[VARIANT_SET_LABEL == '[None]']
+snp_data_dt= snp_data_dt[DP > 5]
+snp_data_dt= snp_data_dt[AF > 0.85]
+
+#remove snps in the araBAD,C or bioB regions, which are deleted and/or plasmid-borne, causing artifacts
+snp_data_dt= snp_data_dt[POSITION < 67500 | POSITION > 71300]
+snp_data_dt= snp_data_dt[POSITION < 807000 | POSITION > 887500]
+
+
+#trim extraneous columns
+snp_data_dt[, c("VARIANT_SET_LABEL", "INFO_PQR", "INFO_QR", "INFO_NS", "INFO_ODDS",  "UID", "INFO_EPPR", "INFO_LOF", "INFO_DPB", "INFO_GTI", "IS_SV",
+                   "INFO_MQMR", "INFO_RPPR", "INFO_NMD","INFO_PRO", "INFO_RO", "INFO_SRF",
+                   "INFO_SRP", "INFO_SRR", "RO", "GT", "GQ",  "AO", "QA",  "QR", "INFO_MQM",
+                   "INFO_ABP", "INFO_TECHNOLOGY.ILLUMINA", "INFO_EPP", "INFO_PQA", "INFO_RUN",
+                   "INFO_DPRA", "INFO_QA", "INFO_EFF_EFFECT", "INFO_TYPE", "INFO_PAO", "INFO_CIGAR",
+                   "INFO_PAIRED", "INFO_AO", "INFO_SAP", "INFO_RPR", "INFO_RPP", "INFO_AC",
+                   "INFO_AB",  "INFO_EFF_TRLEN",  "INFO_EFF_AA", "INFO_RPL",  "INFO_EFF_WARN",
+                   "INFO_EFF_ERR", "INFO_EFF_GT", "INFO_EFF_CLASS", "INFO_MEANALT", "INFO_EFF_RANK",
+                   "INFO_EFF_CODING", "INFO_EFF_TR", "PHRED_ENCODING", "CHROMOSOME", "INFO_DP",
+                   "INFO_NUMALT", "INFO_AN", "INFO_LEN", "IS_HET", "INFO_EFF_BIOTYPE") := NULL]
+
+
+```
+```{r _get_variants_is5}
+#perform same functions for is5 experiment isolates
+is5snp_data_name = "zz3_variants_GT2.csv"
+is5snp_data_file = paste(parent_folder, is5snp_data_name, sep = "/")
+is5snp_data_dt <- data.table(fread(is5snp_data_file))
+
+#remove SNPs flagged for known issues, like low coverage, low mapping quality, or nonunique alignments
+is5snp_data_dt= is5snp_data_dt[VARIANT_SET_LABEL == '[None]']
+is5snp_data_dt= is5snp_data_dt[DP > 5]
+is5snp_data_dt= is5snp_data_dt[AF > 0.85]
+
+#remove snps in the araBAD,C or bioB regions, which are deleted and/or plasmid-borne, causing artifacts
+is5snp_data_dt= is5snp_data_dt[POSITION < 67500 | POSITION > 71300]
+is5snp_data_dt= is5snp_data_dt[POSITION < 807000 | POSITION > 887500]
+
+#trim extraneous columns
+is5snp_data_dt[, c("VARIANT_SET_LABEL", "INFO_PQR", "INFO_QR", "INFO_NS", "INFO_ODDS",  "UID", "INFO_EPPR", "INFO_LOF", "INFO_DPB", "INFO_GTI", "IS_SV",
+                   "INFO_MQMR", "INFO_RPPR", "INFO_NMD","INFO_PRO", "INFO_RO", "INFO_SRF",
+                   "INFO_SRP", "INFO_SRR", "RO", "GT", "GQ",  "AO", "QA",  "QR", "INFO_MQM",
+                   "INFO_ABP", "INFO_TECHNOLOGY.ILLUMINA", "INFO_EPP", "INFO_PQA", "INFO_RUN",
+                   "INFO_DPRA", "INFO_QA", "INFO_EFF_EFFECT", "INFO_TYPE", "INFO_PAO", "INFO_CIGAR",
+                   "INFO_PAIRED", "INFO_AO", "INFO_SAP", "INFO_RPR", "INFO_RPP", "INFO_AC",
+                   "INFO_AB",  "INFO_EFF_TRLEN",  "INFO_EFF_AA", "INFO_RPL",  "INFO_EFF_WARN",
+                   "INFO_EFF_ERR", "INFO_EFF_GT", "INFO_EFF_CLASS", "INFO_MEANALT", "INFO_EFF_RANK",
+                   "INFO_EFF_CODING", "INFO_EFF_TR", "PHRED_ENCODING", "CHROMOSOME", "INFO_DP",
+                   "INFO_NUMALT", "INFO_AN", "INFO_LEN", "IS_HET", "INFO_EFF_BIOTYPE") := NULL]
+
+```
+
+```{r get_parent_variants}
+snp446 = snp_data_dt[EXPERIMENT_SAMPLE_LABEL == "446"]
+snp453 = snp_data_dt[EXPERIMENT_SAMPLE_LABEL == "453"]
+mutlist_446 = snp446$POSITION
+mutlist_453 = snp453$POSITION
+
+
+#remove all muts with position found in 453 or 446 ancestors
+snp_data_dt_noparent = snp_data_dt[!(POSITION %in% c(mutlist_446,mutlist_453))]
+is5snp_data_dt_noparent = is5snp_data_dt[!(POSITION %in% c(mutlist_446,mutlist_453))]
+
+#annotate with tx, colony
+snp_data_dt_noparent[,tx := as.integer(substr(EXPERIMENT_SAMPLE_LABEL,1,2))]
+snp_data_dt_noparent[,colony_id := substr(EXPERIMENT_SAMPLE_LABEL,3,3)]
+is5snp_data_dt_noparent[,tx := as.integer(substr(EXPERIMENT_SAMPLE_LABEL,1,2))]
+is5snp_data_dt_noparent[,colony_id := substr(EXPERIMENT_SAMPLE_LABEL,3,4)]
+
+#merge no parent tables, delete things to clean workspace
+snp_data_dt_noparent_merged = rbind(snp_data_dt_noparent, is5snp_data_dt_noparent)
+rm(snp446, snp453, snp_data_dt, is5snp_data_dt, snp_data_dt_noparent, is5snp_data_dt_noparent)
+```
+
+
+
+```{r further_filter_variants}
+#remove SNPs altered intentionally in ancestral strain, or present in retron plasmids
+snp_data_dt_noparent_filter = snp_data_dt_noparent_merged
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 2082767] #intentional sbcB
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 2082772] #intentional sbcB
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 3038080] #intentional recJ
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4397505] #mutL dominant-negative mutation, on plasmid
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 2339169] #gyrA retron edit gyrA
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4182771] #rpoB retron edit rpoB
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4182791] #rpoB retron edit rpoB
+#remove SNPs aberrantly called 
+
+
+#for sample 21J, cluster of mutations at positions 4108567, 4108572, 4108583 lie within a repetitive RHS element, and thus are likely the result of mismapping
+#allelic exchange from one locus to another cannot be ruled out, however.
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4108567]
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4108572]
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 4108583]
+#for sample 20L, cluster of mutations at positions 729642, 729660, 729666 lie within a repetitive rep element, and thus are likely the result of mismapping
+#allelic exchange from one locus to another cannot be ruled out, however.
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 729642]
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 729660]
+snp_data_dt_noparent_filter= snp_data_dt_noparent_filter[POSITION != 729666]
+
+
+# look for positions that have more than one mutation, to look for any suystematic mutagenesis:
+View(snp_data_dt_noparent_filter[duplicated(snp_data_dt_noparent_filter, by = 'POSITION')])
+
+#another view, to prioritize regions for manual checkup
+hist(snp_data_dt_noparent_filter[tx %in% c(19,20,21) ]$POSITION,10000)
+```
+
+```{r get_tx_metadata}
+#tx list, describing each transformation performed
+txlist_name = "tx_list.csv"
+txlist_file = paste(parent_folder, txlist_name, sep = "/")
+txlist_dt <- data.table(fread(txlist_file))
+
+
+#merge to annotate mutations
+snp_data_dt_noparent_filter_labeled <- snp_data_dt_noparent_filter[txlist_dt, on = "tx", nomatch = 0]
+
+
+```
+
+
+
+
+#now that we've looked carefully at the mutations for any systematic patterns, or interesting mutations, we will report the overall mutagenesis, by counts of mutations
+```{r count muts}
+snp_data_dt_noparent_filter_labeled[ , mut_count := .N, by = EXPERIMENT_SAMPLE_LABEL]
+
+snp_summary = snp_data_dt_noparent_filter_labeled[,
+                                                  list(mut_count = mut_count,
+                                                       tx = tx,
+                                                       colony_id = colony_id,
+                                                       MMR = MMR), by=c("EXPERIMENT_SAMPLE_LABEL")]
+#np_summary[,mean_mutations = mean(mut_count), by =]
+
+snp_summary = unique(snp_summary)
+
+
+```
+
+
+```{r plot_mut_figure}
+mut_fig <- ggplot(snp_summary) + 
+  geom_boxplot(aes(x=MMR, y=mut_count)) +
+  geom_jitter(aes(x=MMR, y=mut_count, color = as.factor(tx)),
+              size = 3, alpha = 0.7,
+              width = 0.25, height = 0.05,
+              stroke = 0) +
+  labs(
+    y = "Number of mutations, per isolate",
+    x = "Experimental treatment") +
+  scale_x_discrete(labels = c("Retron,\nCspRecT, MutL*", "dRT Retron control\n∆mutS")) +
+  scale_y_continuous(breaks = c(1,2,3,4,5,6,7,8,9)) +
+  scale_color_discrete(name = "Retron\nplasmid", labels = c("IS5 KO", "rpoB", "gyrA", "rpoB,\ninactivated\nretron\ncontrol")) +
+  theme_linedraw() +
+  theme(
+    text = element_text(size=12),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    #axis.title.x = element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+)
+
+mut_fig
+```
+
+```{r save_plot}
+fig_width = 5
+fig_height = 3.5 #
+
+ggsave(here::here('fig_new_muts.pdf'), plot=mut_fig, width=fig_width, 
+       height=fig_height, units='in', dpi=300, device = cairo_pdf)
+
+```
+

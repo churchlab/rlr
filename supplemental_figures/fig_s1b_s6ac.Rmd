@@ -1,5 +1,5 @@
 ---
-title: "FigureS2"
+title: "FigureS1b_s6a"
 author: "Max Schubert"
 date: "8/2/2019"
 output: html_document
@@ -22,7 +22,7 @@ library(plotly)
 library(here)
 
 
-parent_folder = here::here('supplemental_figures/figS2')
+parent_folder = here::here('supplemental_figures/fig_s1b_s6a')
 
 ```
 
@@ -58,7 +58,7 @@ melt_with_annot_nozero[, is_ref := (bc_read == ref)]
 melt_with_annot_nozero[, is_alt := (bc_read == alt)]
 
 #of sequences matching ref or alt, what fraction is edited
-melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='Sample_ID'][is_ref == TRUE]
+melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := (Count/sum(Count)) , by='Sample_ID'][is_alt == TRUE]
 melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
 ```
 
@@ -79,7 +79,7 @@ cutcount_dt <- data.table(fread(cutcount_file))
 ```
 
 ##visualize the controls
-# this is s2B, editing controls
+# this is s1b, editing controls
 ```{r plot h1}
 h1 <- melt_with_fedit[expt == 'H1']
 
@@ -108,7 +108,7 @@ x_labels <- addline_format(c("Full, Construct",
 
 
 
-fig_s2 = ggplot(h1, aes(x=more_desc, y=fraction_edited, color=more_desc)) + 
+fig_s1b = ggplot(h1, aes(x=more_desc, y=fraction_edited, color=more_desc)) + 
   geom_jitter(width = 0.1, height = 0.1, size = 3) +
   theme_bw() +
   geom_boxplot(outlier.shape = NA, alpha = 0.5) +
@@ -122,16 +122,16 @@ fig_s2 = ggplot(h1, aes(x=more_desc, y=fraction_edited, color=more_desc)) +
     y = "Fraction Edited") +
   scale_x_discrete(labels = x_labels)
 
-fig_s2
+fig_s1b
 #ggplotly()
 
-ggsave(here::here('supplemental_figures/fig_s2.pdf'),
+ggsave(here::here('supplemental_figures/fig_s1b.pdf'),
        plot=fig_s2, width=7, height=5, units='in', dpi=300,
        useDingbats=FALSE) #this is so illustrator can interpret symbols
 ```
 
 #h7
-#s3A, CspRecT efficiency across genotypes
+#s6a, CspRecT efficiency across genotypes
 ```{r}
 
 h7 <- melt_with_fedit[expt == 'H7']
@@ -201,7 +201,7 @@ ggsave(here::here('supplemental_figures/fig_s3A.pdf'), plot=fig_supp3,
 fig_supp3
 ```
 
-#figure S3B
+#figure S6C
 ```{r h4_slide}
 h4 <- melt_with_fedit[expt == 'H4']
 
@@ -219,7 +219,7 @@ h4_no_negative = h4[desc != "is5"]
 y_breaks = c(.1, .25, .5, .9, 1)
 x_breaks = c(10, 20, 30, 40, 50 , 60 , 70 , 80 , 90)
 
-fig_supp3B <- ggplot(h4_no_negative, aes(x=position, y=fraction_edited, color=as.factor(position))) + 
+fig_s6c <- ggplot(h4_no_negative, aes(x=position, y=fraction_edited, color=as.factor(position))) + 
   geom_jitter(width = 0.3, size = 2, alpha = 0.7) +
   geom_boxplot(outlier.shape = NA, alpha = 0.5) +
   theme_linedraw() +
@@ -232,9 +232,9 @@ fig_supp3B <- ggplot(h4_no_negative, aes(x=position, y=fraction_edited, color=as
     x = "Heterology position (90-mer donor)",
     y = "Fraction Edited") 
 
-fig_supp3B
+fig_s6c
 
-ggsave(here::here('supplemental_figures/fig_s3B.pdf'), plot=fig_supp3B,
+ggsave(here::here('supplemental_figures/fig_s6c.pdf'), plot=fig_supp3B,
        width=5, height=3, units='in', dpi=300,
        useDingbats = FALSE)
 #ggplotly()

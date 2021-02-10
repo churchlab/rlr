@@ -1,0 +1,101 @@
+genotype,locus,fraction_edited,ssap,well
+WT,rpoB,9.32469245166212e-05,Beta,A1
+WT,rpoB,0.000161023873280208,Beta,A2
+WT,rpoB,0.000150795445977514,Beta,A3
+WT,rpoB,0.000130702611779165,Beta,A4
+WT,rpoB,0.000172519882916555,Beta,A5
+WT,rpoB,7.12090103134333e-05,Beta,A6
+WT,rpoB,0.000118026350935829,Beta,A7
+WT,rpoB,0.000143231031654034,Beta,A8
+WT,gyrA,3.75196308067816e-05,Beta,E1
+WT,gyrA,1.58191971230126e-05,Beta,E2
+WT,gyrA,5.26221623498024e-06,Beta,E3
+WT,gyrA,1.05589930944339e-05,Beta,E4
+WT,gyrA,2.66052263306893e-05,Beta,E5
+WT,gyrA,5.29251743885961e-06,Beta,E6
+WT,gyrA,5.47570157427568e-06,Beta,E7
+WT,gyrA,1.13074204947106e-05,Beta,E8
+∆mutS,rpoB,0.000290323644881352,Beta,A9
+∆mutS,rpoB,0.000194436522956476,Beta,A10
+∆mutS,rpoB,0.000312141581614189,Beta,A11
+∆mutS,rpoB,0.000203122061312788,Beta,A12
+∆mutS,rpoB,0.000313945204487021,Beta,B9
+∆mutS,rpoB,0.00027198970419462,Beta,B10
+∆mutS,rpoB,0.000255010613955275,Beta,B11
+∆mutS,rpoB,0.000373419057360436,Beta,B12
+∆mutS,gyrA,0.00167808945099979,Beta,E9
+∆mutS,gyrA,0.00145777777777778,Beta,E10
+∆mutS,gyrA,0.00176807444523985,Beta,E11
+∆mutS,gyrA,0.00175959674805348,Beta,E12
+∆mutS,gyrA,0.00165089347806369,Beta,F9
+∆mutS,gyrA,0.0061660701973274,Beta,F10
+∆mutS,gyrA,0.00164877990287182,Beta,F11
+∆mutS,gyrA,0.0015282381922691,Beta,F12
+"∆mutS, ∆recJ",rpoB,0.003224385793828,Beta,B1
+"∆mutS, ∆recJ",rpoB,0.00291498560564629,Beta,B2
+"∆mutS, ∆recJ",rpoB,0.00331901496758358,Beta,B3
+"∆mutS, ∆recJ",rpoB,0.00294365012615638,Beta,B4
+"∆mutS, ∆recJ",rpoB,0.003292341037058,Beta,B5
+"∆mutS, ∆recJ",rpoB,0.00328290352125882,Beta,B6
+"∆mutS, ∆recJ",rpoB,0.00312337324310252,Beta,B7
+"∆mutS, ∆recJ",rpoB,0.00352061852435248,Beta,B8
+"∆mutS, ∆recJ",gyrA,0.0368772088613051,Beta,F1
+"∆mutS, ∆recJ",gyrA,0.0363190810162934,Beta,F2
+"∆mutS, ∆recJ",gyrA,0.043178625066615,Beta,F3
+"∆mutS, ∆recJ",gyrA,0.0344793983445303,Beta,F4
+"∆mutS, ∆recJ",gyrA,0.0356997535999276,Beta,F5
+"∆mutS, ∆recJ",gyrA,0.0352897725523992,Beta,F6
+"∆mutS, ∆recJ",gyrA,0.0363885184925258,Beta,F7
+"∆mutS, ∆recJ",gyrA,0.0365413506832425,Beta,F8
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0606188920379361,Beta,C9
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0599510360064489,Beta,C10
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0105367662384677,Beta,C11
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0584398464523749,Beta,C12
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0592351353866195,Beta,D1
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0625693458523724,Beta,D2
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0605365379946589,Beta,D3
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0625601133036686,Beta,D4
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0589981695611411,Beta,D5
+"∆mutS, ∆recJ, ∆sbcB",rpoB,0.0652013793565235,Beta,D6
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.287835968526424,Beta,G9
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.284816061291096,Beta,G10
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.288856896583344,Beta,G11
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.269559213634216,Beta,G12
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.293168052561339,Beta,H1
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.298791492890417,Beta,H2
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.292850454662569,Beta,H3
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.298386518036551,Beta,H4
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.294063750783623,Beta,H5
+"∆mutS, ∆recJ, ∆sbcB",gyrA,0.299584645096431,Beta,H6
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.844984438592291,CspRecT,G1
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.850881702740219,CspRecT,G2
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.822643614054657,CspRecT,G3
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.845290700561045,CspRecT,G4
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.814064568107268,CspRecT,G5
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.850093984962406,CspRecT,G6
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.849375426519895,CspRecT,G7
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",gyrA,0.844863686864371,CspRecT,G8
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.706088826347495,CspRecT,H1
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.682844525301134,CspRecT,H2
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.70397889499257,CspRecT,H3
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.698586977277067,CspRecT,H4
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.702398081534772,CspRecT,H5
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.705150841730342,CspRecT,H6
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.701416489854466,CspRecT,H7
+"∆mutS, ∆recJ, ∆sbcB, + CspRecT",rpoB,0.701637942672007,CspRecT,H8
+"∆mutS, ∆sbcB",rpoB,0.0613456317840306,Beta,C1
+"∆mutS, ∆sbcB",rpoB,0.00136385312350973,Beta,C2
+"∆mutS, ∆sbcB",rpoB,0.00131544182542853,Beta,C3
+"∆mutS, ∆sbcB",rpoB,0.00154201612246563,Beta,C4
+"∆mutS, ∆sbcB",rpoB,0.00135054021608638,Beta,C5
+"∆mutS, ∆sbcB",rpoB,0.00145458311365521,Beta,C6
+"∆mutS, ∆sbcB",rpoB,0.00154700927262263,Beta,C7
+"∆mutS, ∆sbcB",rpoB,0.00158267200253226,Beta,C8
+"∆mutS, ∆sbcB",gyrA,0.0145602959281766,Beta,G1
+"∆mutS, ∆sbcB",gyrA,0.0143366493294061,Beta,G2
+"∆mutS, ∆sbcB",gyrA,0.0141919919978818,Beta,G3
+"∆mutS, ∆sbcB",gyrA,0.014018691588785,Beta,G4
+"∆mutS, ∆sbcB",gyrA,0.013347590891936,Beta,G5
+"∆mutS, ∆sbcB",gyrA,0.0127188749482973,Beta,G6
+"∆mutS, ∆sbcB",gyrA,0.0131884287752778,Beta,G7
+"∆mutS, ∆sbcB",gyrA,0.013151531092765,Beta,G8

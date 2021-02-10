@@ -1,5 +1,5 @@
 ---
-title: "fig_S1A_growth"
+title: "fig_8_growth"
 author: "Max Schubert"
 date: "8/7/2019"
 output: html_document
@@ -20,7 +20,7 @@ library(ggpubr)
 library(RColorBrewer)
 
 
-parent_folder = here::here('supplemental_figures/fig_S1A')
+parent_folder = here::here('supplemental_figures/fig_s8')
 ```
 
 
@@ -300,13 +300,13 @@ S1AB <- plot_grid(
   rel_widths = c(1, 1.5))
 
 #save AB plot
-ggsave(here::here('supplemental_figures/fig_supp1AB.pdf'), plot=S1AB, width=8, 
+ggsave(here::here('supplemental_figures/fig_s8ab.pdf'), plot=S1AB, width=8, 
        height=4, units='in', dpi=300)
 #save C plot
-ggsave(here::here('supplemental_figures/fig_supp1C.pdf'), plot=c, width=8, 
+ggsave(here::here('supplemental_figures/fig_s8c.pdf'), plot=c, width=8, 
        height=4, units='in', dpi=300)
 
-S1ABC <- plot_grid(
+S8ABC <- plot_grid(
   plotlist=list(a, b, c),
   align = 'v',
   axis='tblr',

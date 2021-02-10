@@ -32,7 +32,7 @@ source(here::here('constants.R'))
 ## reanalysis of experiment "H10"
 
 ```{r get_data}
-data_dir = parent_folder
+data_dir = parent_folder # here::here('fig_2D')
 analysis_dir = parent_folder
 
 #data
@@ -67,7 +67,7 @@ melt_with_annot_nozero[, is_ref := (bc_read == ref)]
 melt_with_annot_nozero[, is_alt := (bc_read == alt)]
 
 #of sequences matching ref or alt, what fraction is edited
-melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := 1- (Count/sum(Count)) , by='well'][is_ref == TRUE]
+melt_with_fedit <- melt_with_annot_nozero[ is_ref ==TRUE | is_alt == TRUE , fraction_edited := (Count/sum(Count)) , by='well'][is_alt == TRUE]
 melt_with_fedit[, c("is_ref", "is_alt"):=NULL] #ditch these columns now
 
 #save this table
@@ -86,7 +86,7 @@ print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of
 
 ### append data from "H7" experiment in supp fig S3A showing results for cspRecT, for inclusion here. also plotted in 2B
 ```{r get_h7_data}
-h7_scrubbed = readRDS(file = "h7data")
+h7_scrubbed = readRDS(file = paste(parent_folder,"h7data",sep = "/"))
 h7_triple <- h7_scrubbed[genotype == "sbcB-, recJ-, mutS-" ]
 h7_triple$genotype = "∆mutS, ∆recJ, ∆sbcB, + CspRecT"
 h7_triple$label = ""
@@ -158,10 +158,10 @@ fig_1D <- ggplot(fig2d_rbind, aes(x= locus, y=fraction_edited, color=locus)) +
 fig_1D
 ```
 ```{r save_figure}
-fig_width = 3.25
+fig_width = 3.05
 fig_height = 3.75 #edit of X,y axis makes it shorter
 
-ggsave(here::here('fig_2D_quasi2.pdf'), plot=fig_1D, width=fig_width, 
+ggsave(here::here('fig_2D_quasi2_again.pdf'), plot=fig_1D, width=fig_width, 
        height=fig_height, units='in', dpi=300, device = cairo_pdf)
 #ggplotly()
 ```

@@ -1,0 +1,413 @@
+---
+title: "fig_2E"
+author: "Max Schubert"
+date: "1/26/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(stringr)
+library(plyr)
+library(gridExtra)
+require(ggplot2)
+require(data.table)
+require(scales)
+library(ggpubr)
+library(plotly)
+#library(dplyr)
+
+library(ggbeeswarm) #first install.packages("ggbeeswarm")
+
+# mkdir fig_nu2E
+parent_folder <- here::here('fig_2E')
+```
+
+
+```{r get_data}
+data_dir = parent_folder
+analysis_dir = parent_folder
+
+#data
+edit_data_name = "ZZ2_merged_bins_2"
+edit_data_file = paste(data_dir, edit_data_name, sep = "/")
+edit_data_dt <- data.table(fread(edit_data_file))
+edit_data_melt <- melt(edit_data_dt, id.var=c('read_id', 'total_count', 'bc_read'), value.name='Count', variable.name='Sample')
+edit_data_melt[, uniq := str_replace_all(Sample, "_cutcount", "")]
+edit_data_melt[, c("Sample","read_id") := NULL]
+edit_data_melt = edit_data_melt[Count > 0] #kill zero values
+
+```
+
+
+```{r read_in_metadata}
+#manifest, describing each sample sequenced
+manifest_name = "k171819_liblist.csv"
+manifest_file = paste(analysis_dir, manifest_name, sep = "/")
+manifest_dt <- data.table(fread(manifest_file))
+manifest_dt[, c("i7", "i7seq", "i5", "i5seq"):=NULL] #rm extraneous columns
+
+#tx list, describing each transformation performed
+txlist_name = "tx_list.csv"
+txlist_file = paste(analysis_dir, txlist_name, sep = "/")
+txlist_dt <- data.table(fread(txlist_file))
+
+#adapters list, read in to describe ref and alt
+adapters_name = "adapters_map.csv"
+adapt_file = paste(analysis_dir, adapters_name, sep = "/")
+adapt_dt <- data.table(fread(adapt_file))
+adapt_dt[, c("5prime_cutadapt", "3prime_cutadapt", "5prime_edit", "3prime_edit"):=NULL] #rm extraneous columns
+
+```
+
+
+```{r annotate_counts}
+txadapt_dt <- txlist_dt[adapt_dt, on = "locus_allele", nomatch = 0] #add "ref" and "alt" sequences expected
+
+#merge to create metadata table
+metadata <- manifest_dt[txadapt_dt, on = "tx", nomatch = 0]
+metadata <- metadata[expt == "zz2_amplicons"] #rm genome experiments here
+metadata[, "expt" := NULL]
+
+
+
+#merge metadata to counts
+annotated_dt <- edit_data_melt[metadata, on = "uniq", nomatch = 0]
+
+```
+
+#optional: clean up workspace
+```{r rm}
+rm("adapt_dt","adapt_file", "adapters_name", "edit_data_dt","edit_data_file",
+  "edit_data_melt", "edit_data_name", "manifest_dt", "manifest_file", "manifest_name", "metadata",
+  "txadapt_dt", "txlist_dt", "txlist_file", "txlist_name")
+```
+
+
+# measure fraction edited
+```{r fraction_edited}
+annotated_dt[, is_ref := (bc_read == ref)]
+annotated_dt[, is_alt := (bc_read == alt)]
+
+#of sequences matching ref or alt, what fraction is edited
+#PAY ATTENTION TO THE "BY" here!!!! it's critical for assigning values to the appropriate experiments
+annotated_dt <- annotated_dt[Count > 10][, all_count := sum(Count), by = 'uniq']
+
+annotated_countrefalt <- annotated_dt[is_ref ==TRUE | is_alt == TRUE][, ref_alt_count := sum(Count), by = 'uniq']
+annotated_countrefalt[, pct_ref_alt := ref_alt_count/all_count]
+
+annotated_countrefalt <- annotated_countrefalt[, fraction_all_edited := (Count/all_count) ][is_alt == TRUE]
+
+
+#fraction_edited, of ref and alt
+annotated_fedit <- annotated_dt[ is_ref ==TRUE | is_alt == TRUE, fraction_edited := (Count/sum(Count)) , by='uniq'][is_alt == TRUE]
+
+#save a copy of this data for reference, and for use in supplemental figure 
+saveto = here::here('fig_2E') #update if renamed
+saveRDS(annotated_fedit, file = paste(saveto,'fraction_edited_fig2ef.rds', sep = '/'))
+
+
+```
+
+```{r keep track of reads}
+
+total_counts_merged = sum(annotated_dt$Count)
+total_counts_ref_or_alt = sum(annotated_dt[is_ref == TRUE | is_alt == TRUE]$Count)
+
+
+#compare ref_alt read num to total merged, this is generally 98+ % of reads
+print(paste(as.character(total_counts_ref_or_alt/total_counts_merged*100), "% of reads are ref or alt seqs", sep = " "))
+```
+
+```{r save_het_data}
+#this analysis analyzes "het" data on the basis of complete editing of all positions.
+#this is in contrast to the analysis for fig_het (new 2F) which analyzes per position
+
+het_slice <- annotated_countrefalt[locus_allele %in% c("rpoB_het_full", "gyrA_het_full")]
+het_slice <- het_slice[donor_len == 90]
+het_slice <- het_slice[timepoint == 1]
+
+savename = 'het_full_slice'
+saveto = here::here('fig_2F') #update if renamed
+saveRDS(het_slice, file = paste(saveto,"het_full_slice.rds", sep = '/'))
+
+
+```
+
+
+#plotting for new figure 2E
+```{r set_up_plot}
+#temp, filter plot to look at subsets
+current = annotated_fedit[locus_allele %in% c("rpoB_wide", "gyrA_ultrawide")] #, "rpoB_plus", "gyrA_plus")]
+#current = current[donor_len == 90]
+current = current[controltype != "offtarget_control"] 
+current = current[controltype != "negative_control"]
+current = current[timepoint == 1]
+
+#constants
+tick_font_size = 12
+axis_font_size = 12
+
+```
+
+## 
+```{r length_effect}
+
+fig_len <- ggplot(current, aes(x= donor_len, y=fraction_edited, color=locus_allele)) + 
+  geom_jitter(size = 3, alpha = 0.7, stroke = 0) +
+  #geom_quasirandom(method='pseudorandom', size = 3, alpha = 0.7, stroke = 0)+
+  #geom_hline(yintercept=mean_locus_editing, linetype=2, size=0.5) +
+  theme_linedraw() +
+  #coord_cartesian(ylim=c(.5, .95)) +
+  scale_y_continuous(breaks = c(.5, .6, .7, .8, .9),
+                     labels = c("50%","60%", "70%", "80%", "90%")) +
+  scale_x_continuous(breaks = c(70, 90, 120, 150, 180)) +
+  labs(
+    y = "Fraction Edited",
+    x = "Donor Length")  +
+  #facet_grid(~timepoint, scales = 'free_x', space = 'free_x',
+  #           switch = 'both')  #+ #scales='free_x'
+  #scale_colour_manual(values = color_2d) +
+  theme(
+    axis.text.x = element_text(size = tick_font_size),
+    axis.text.y = element_text(size = tick_font_size),
+    axis.title.y = element_text(size = axis_font_size),
+    axis.title.x = element_text(size = axis_font_size),
+  #  strip.background=element_blank(),
+    panel.grid.minor=element_blank(),
+    panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    legend.position = 'none')
+
+fig_len
+```
+
+
+```{r save_figure}
+fig_width = 2.8
+fig_height = 3 #edit of X,y axis makes it shorter
+
+ggsave(here::here('fig_2E_out2.pdf'), plot=fig_len,
+       width=fig_width, height=fig_height,
+       units='in', dpi=300, device = cairo_pdf)
+#ggplotly()
+```
+
+# estimate of noise:
+
+```{r noise_floor_for_2D}
+#work with types of noise
+offtargetdt = annotated_fedit[controltype == "offtarget_control"]
+offtargetdt = offtargetdt[timepoint == 2]
+
+#save noise data
+savename = 'noisefloor.rds'
+saveto = here::here('fig_2B') 
+saveRDS(offtargetdt, file = paste(saveto,savename, sep = '/'))
+```
+
+```{r plot_noise_floor}
+noisefloordt = annotated_fedit[controltype %in% c("offtarget_control", "positive_control")]
+noisefloordt = noisefloordt[timepoint == 1]
+
+fig_s1e <- ggplot(noisefloordt, aes(x=controltype, y=fraction_edited, color=locus_allele)) + 
+  geom_jitter(width = 0.3, #height = 0.1,
+              size = 3, alpha = 0.7, stroke = 0) +
+  #geom_quasirandom(method='pseudorandom', size = 3, alpha = 0.7, stroke = 0)+
+  scale_y_continuous(breaks = c(.0001, .001, .01, .1, .5, 1),
+                     labels=c("0.01%","0.1%","1%","10%","50%","100%"), 
+                     trans = log10_trans(),
+                     limits = c(.0001, 1)) +
+  annotation_logticks(sides = "l") +
+  theme_linedraw() +
+  labs(x= "", y = "Fraction Edited", color = "") +
+  scale_x_discrete(labels = c("Incorrect amplicon\n(Noise)", "Correct amplicon\n(Signal)")) +
+  scale_color_discrete(labels = c("gyrA", "rpoB", "gyrA,\namplified at rpoB")) +
+  theme(
+    text = element_text(size=10),
+    axis.title.x = element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+    legend.position = "none")
+
+fig_s1e
+
+mean(noisefloordt[controltype %in% c("offtarget_control")]$fraction_edited)
+```
+```{r saveplot}
+
+fig_width = 2.5
+fig_height = 3 #edit of X,y axis makes it shorter
+
+ggsave(here::here('supplemental_figures/fig_s1e.pdf'), plot=fig_s1e, width=fig_width, 
+       height=fig_height, units='in', dpi=300, device = cairo_pdf)
+
+```
+
+
+
+
+
+
+
+############ below reconfigured and moved to supplement
+
+##additional plotting: TAA/TAG mismatch efficiency
+```{r fetch hda and coaD 1bp data}
+h10_name = 'h10fraction_edited.rds'
+h10dir = paste(here::here('fig_2D'),h10_name,sep = "/")
+h10_dt = readRDS(h10dir)
+
+h10_dt = h10_dt[locus %in% c("hda", "coaD")]
+
+h10_dt[,allele := tstrsplit(more_desc, "_", fixed=TRUE)[3]]
+
+h10_dt[,c("read_id", "total_count", "bc_read", "col",
+          "plas","ref", "alt", "parent", "Sample", "more_desc") := NULL]
+```
+
+
+
+```{r set up tags plot}
+#temp, filter plot to look at subsets
+tagsdt = annotated_fedit[amplicon %in% c("hda", "coaD")] 
+tagsdt = tagsdt[timepoint == 1]
+tagsdt[, c("total_count", "bc_read", "uniq", "timepoint", "plate", "ID",
+           "amplicon", "controltype", "tx", "plasmid",
+           "ref", "alt", "is_ref","is_alt", "MMR", "strain") := NULL]
+
+tagsdt[,c("locus", "allele") := tstrsplit(locus_allele, "_", fixed=TRUE)]
+
+
+current = rbind(tagsdt, h10_dt, fill = TRUE)
+
+#constants
+tick_font_size = 12
+axis_font_size = 12
+
+#change plotting order
+current$allele <- factor(current$allele ,levels = c("TAA","his","strep" ))
+
+
+colors2 <- c('coaD' = '#F564E3','hda' = '#00B4F0')
+
+```
+## 
+```{r tags}
+
+tags <- ggplot(current, aes(x= allele, y=fraction_edited, color=locus)) + 
+  geom_jitter(size = 3, alpha = 0.7,
+              stroke = 0, width = 0.2) +
+  #geom_quasirandom(method='pseudorandom', size = 3, alpha = 0.7, stroke = 0)+
+  #geom_hline(yintercept=mean_locus_editing, linetype=2, size=0.5) +
+  theme_linedraw() +
+  #coord_cartesian(ylim=c(.5, .95)) +
+  scale_y_continuous(breaks = c(.01, .05, .1, .25, .5, 1),
+                     labels = c("1%","5%", "10%", "25%", "50%", "100%"),
+                     limits = c(.01, 1),
+                     trans = log10_trans()) +
+  scale_x_discrete(labels = c("TAG > TAA\n1bp\nmismatch", "6xHis Tag\n18bp\ninsertion", "Strep Tag\n24bp\ninsertion")) +
+  scale_colour_manual(values = colors2) +
+  labs(x= "",
+       y = "Fraction Edited",
+       color = "Locus")  +
+  annotation_logticks(sides = "l") +
+  #scale_color_discrete(name = "Edit Type", labels = c("6xHis Tag (18bp)", "Strep Tag (24bp)", "TAG>TAA (1bp mismatch)")) +
+  #facet_grid(~as, scales = 'free_x', space = 'free_x',
+  #           switch = 'both')  + #scales='free_x'
+  #scale_colour_manual(values = color_2d) +
+  theme(
+    axis.text.x = element_text(size = tick_font_size),
+    axis.text.y = element_text(size = tick_font_size),
+    axis.title.y = element_text(size = axis_font_size),
+    axis.title.x = element_text(size = axis_font_size),
+    #strip.background=element_blank(),
+   # panel.grid.minor=element_blank(),
+    #panel.grid.major.x=element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line())
+
+tags
+```
+```{r get_is5_data}
+is5parent_folder <- here::here('/supplemental_figures/fig_is5_var')
+#perform same functions for is5 experiment isolates
+is5_data_name = "zz3_is5_variants.csv"
+is5_data_file = paste(is5parent_folder, is5_data_name, sep = "/")
+is5_data_dt <- data.table(fread(is5_data_file))
+
+#trim extraneous columns
+is5_data_dt[, c("VARIANT_SET_LABEL", "INFO_PQR", "INFO_QR", "INFO_NS", "INFO_ODDS",  "UID", "INFO_EPPR", "INFO_LOF", "INFO_DPB", "INFO_GTI", "IS_SV",
+                   "INFO_MQMR", "INFO_RPPR", "INFO_NMD","INFO_PRO", "INFO_RO", "INFO_SRF",
+                   "INFO_SRP", "INFO_SRR", "RO", "GT", "GQ",  "AO", "QA",  "QR", "INFO_MQM",
+                   "INFO_ABP", "INFO_TECHNOLOGY.ILLUMINA", "INFO_EPP", "INFO_PQA", "INFO_RUN",
+                   "INFO_DPRA", "INFO_QA", "INFO_EFF_EFFECT", "INFO_TYPE", "INFO_PAO", "INFO_CIGAR",
+                   "INFO_PAIRED", "INFO_AO", "INFO_SAP", "INFO_RPR", "INFO_RPP", "INFO_AC",
+                   "INFO_AB",  "INFO_EFF_TRLEN",  "INFO_EFF_AA", "INFO_RPL",  "INFO_EFF_WARN",
+                   "INFO_EFF_ERR", "INFO_EFF_GT", "INFO_EFF_CLASS", "INFO_MEANALT", "INFO_EFF_RANK",
+                   "INFO_EFF_CODING", "INFO_EFF_TR", "PHRED_ENCODING", "CHROMOSOME", "INFO_DP",
+                   "INFO_NUMALT", "INFO_AN", "INFO_LEN", "IS_HET", "INFO_EFF_BIOTYPE",
+                "INFO_SAR","INFO_SAF","INFO_AF","GL","INFO_EFF_CONTEXT", "INFO_EFF_IMPACT","INFO_EFF_GENE", "REF", "ALT") := NULL]
+```
+
+
+```{r plot_is5}
+
+#estimate number of edited sites
+is5_data_dt[,approx_is5_edits := round(AF*12)]
+
+
+is5_fig <- ggplot(is5_data_dt, aes(x=as.factor(POSITION), y=approx_is5_edits)) + 
+  #geom_boxplot() +
+  geom_jitter(size = 3, alpha = 0.7,
+              width = 0.25, height = 0.05,
+              stroke = 0) +
+  labs(
+    y = "IS elements inactivated (of 12), per isolate",
+    x = "Retron targeting 12 copies\nof IS5 element\n6bp\ninsertion") +
+  #scale_x_discrete(labels = c("Retron,\nCspRecT, MutL*", "dRT Retron control\n∆mutS")) +
+  scale_y_continuous(breaks = c(1,2,3,4,5,6,7), limits= c(0,9)) +
+  #scale_color_discrete(name = "Retron\nplasmid", labels = c("IS5 KO", "rpoB", "gyrA", "rpoB,\ninactivated\nretron\ncontrol")) +
+  theme_linedraw() +
+  theme(
+    text = element_text(size=12),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    axis.text.x = element_blank(),
+    panel.border=element_blank(),
+    axis.line=element_line(),
+    panel.grid.major.x=element_blank(),
+    panel.grid.minor.x=element_blank(),
+    panel.grid.minor.y=element_blank(),
+)
+
+is5_fig
+
+```
+
+
+
+```{r save_figure}
+fig_width = 5
+fig_height = 3 #edit of X,y axis makes it shorter
+
+ggsave(here::here('fig_tags_out.pdf'), plot=tags,
+       width=fig_width, height=fig_height,
+       units='in', dpi=300, device = cairo_pdf)
+#ggplotly()
+```
+
+
+
+
+
+
