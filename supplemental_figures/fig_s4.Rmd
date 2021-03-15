@@ -151,11 +151,12 @@ txlist_name = "tx_list.csv"
 txlist_file = paste(parent_folder, txlist_name, sep = "/")
 txlist_dt <- data.table(fread(txlist_file))
 
-
 #merge to annotate mutations
 snp_data_dt_noparent_filter_labeled <- snp_data_dt_noparent_filter[txlist_dt, on = "tx", nomatch = 0]
 
-
+#save this list of mutations, supplemental_dataset_s6
+s6_path = paste(parent_folder, "supplemental_dataset_S6.csv", sep = "/")
+write.csv(snp_data_dt_noparent_filter_labeled, s6_path)
 ```
 
 
@@ -173,7 +174,6 @@ snp_summary = snp_data_dt_noparent_filter_labeled[,
 #np_summary[,mean_mutations = mean(mut_count), by =]
 
 snp_summary = unique(snp_summary)
-
 
 ```
 
